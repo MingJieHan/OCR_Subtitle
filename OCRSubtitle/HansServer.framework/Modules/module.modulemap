@@ -1,0 +1,6 @@
+framework module HansServer {
+  umbrella header "HansServer.h"
+  export *
+
+  module * { export * }
+}
