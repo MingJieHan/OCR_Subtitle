@@ -14,10 +14,10 @@ NS_ASSUME_NONNULL_BEGIN
 @interface OCRManageSegment : NSObject
 +(OCRManageSegment *)shared;
 
--(BOOL)saveSegmentsInto:(NSString *)targetFile;
--(BOOL)loadSegmentsFrom:(NSString *)fromFile;
+-(BOOL)saveSegments;
+-(BOOL)loadSegments;
 
--(void)add:(OCRSegment *)segment;
+-(void)add:(OCRSegment *)segment withSubtitleImage:(CGImageRef)subtitleCGImage withSource:(CGImageRef)subtitleSourceCGImage;
 -(void)clear;
 
 //Tolerance 字幕准许的差

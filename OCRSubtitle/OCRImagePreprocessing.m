@@ -18,10 +18,25 @@
     NSUInteger bytesPerPixel;
     NSUInteger bytesPerRow;
     NSMutableArray *points;
-    NSUInteger minumim;
-    NSUInteger maximum;
-    NSUInteger replaceValue;
     NSDate *startDate;
+    
+    NSUInteger text_R_minumim;
+    NSUInteger text_R_maximum;
+    NSUInteger text_G_minumim;
+    NSUInteger text_G_maximum;
+    NSUInteger text_B_minumim;
+    NSUInteger text_B_maximum;
+    
+    NSUInteger board_R_minumim;
+    NSUInteger board_R_center;
+    NSUInteger board_R_maximum;
+    NSUInteger board_G_minumim;
+    NSUInteger board_G_center;
+    NSUInteger board_G_maximum;
+    NSUInteger board_B_minumim;
+    NSUInteger board_B_center;
+    NSUInteger board_B_maximum;
+
 }
 @end
 
@@ -78,6 +93,19 @@
     unsigned short R = rawData[byteIndex];
     unsigned short G = rawData[byteIndex+1];
     unsigned short B = rawData[byteIndex+2];
+    
+    if( R >= board_R_minumim
+       && R <= board_R_maximum
+       && G >= board_G_minumim
+       && G <= board_G_maximum
+       && B >= board_B_minumim
+       && B <= board_B_maximum){
+//   颜色在board 颜色范围内
+        return NO;
+    }
+    return YES;
+    
+    /* 以前测试通过的判断方法
     if ( (R >= minumim && R <= maximum)
         || (G >= minumim && G <= maximum)
         || (B >= minumim && B <= maximum)){
@@ -89,6 +117,7 @@
         return YES;
     }
     return NO;
+     */
 }
 
 -(void)spread{
@@ -113,10 +142,10 @@
         NSUInteger byteIndex = [self byteIndexWithX:x Y:y];
         BOOL needSpread = [self colorSpreadWithByteIndex:byteIndex];
         if (needSpread){
-            rawData[byteIndex] = 0;
-            rawData[byteIndex+1] = 0;
-            rawData[byteIndex+2] = 0;
-            rawData[byteIndex+3] = 255;
+            rawData[byteIndex] = board_R_center;
+            rawData[byteIndex+1] = board_G_center;
+            rawData[byteIndex+2] = board_B_center;
+//            rawData[byteIndex+3] = 255;
             
             if ([self needSpreadForX:x-1 Y:y]){
 //                NSLog(@"向左");
@@ -197,18 +226,75 @@
 }
 
 -(CGImageRef)createSpreadCGImageFrom:(CGImageRef)image
-                        scopeMinumim:(NSUInteger)_min
-                             maximum:(NSUInteger)_max
-                        replaceValue:(NSUInteger)_value
-                                gate:(NSUInteger)gate{
-    if (nil == image){
+                           textColor:(UIColor *)textColor
+                      textTolerances:(float)textTolerances
+                          boardColor:(UIColor *)boardColor
+                     boardTolerances:(float)boardTolerances{
+    if (nil == image || nil == textColor || nil == boardColor){
         return nil;
     }
     
-    minumim = _min;
-    maximum = _max;
-    replaceValue = _value;
-    
+    CGFloat text_R;
+    CGFloat text_G;
+    CGFloat text_B;
+    [textColor getRed:&text_R green:&text_G blue:&text_B alpha:nil];
+    text_R_minumim = (text_R - textTolerances) * 255.f;
+    if (text_R_minumim < 0){
+        text_R_minumim = 0;
+    }
+    text_R_maximum = (text_R + textTolerances) * 255.f;
+    if (text_R_maximum > 255){
+        text_R_maximum = 255;
+    }
+    text_G_minumim = (text_G - textTolerances) * 255.f;
+    if (text_G_minumim < 0){
+        text_G_minumim = 0;
+    }
+    text_G_maximum = (text_G + textTolerances) * 255.f;
+    if (text_G_maximum > 255){
+        text_G_maximum = 255;
+    }
+    text_B_minumim = (text_B - textTolerances) * 255.f;
+    if (text_B_minumim < 0){
+        text_B_minumim = 0;
+    }
+    text_B_maximum = (text_B + textTolerances) * 255.f;
+    if (text_B_maximum > 255){
+        text_B_maximum = 255;
+    }
+
+    CGFloat board_R;
+    CGFloat board_G;
+    CGFloat board_B;
+    [boardColor getRed:&board_R green:&board_G blue:&board_B alpha:nil];
+    board_R_minumim = (board_R - boardTolerances) * 255.f;
+    if (board_R_minumim < 0){
+        board_R_minumim = 0;
+    }
+    board_R_center = board_R * 255.f;
+    board_R_maximum = (board_R + boardTolerances) * 255.f;
+    if (board_R_maximum > 255){
+        board_R_maximum = 255;
+    }
+    board_G_minumim = (board_G - boardTolerances) * 255.f;
+    if (board_G_minumim < 0){
+        board_G_minumim = 0;
+    }
+    board_G_center = board_G * 255.f;
+    board_G_maximum = (board_G + boardTolerances) * 255.f;
+    if (board_G_maximum > 255){
+        board_G_maximum = 255;
+    }
+    board_B_minumim = (board_B - boardTolerances) * 255.f;
+    if (board_B_minumim < 0){
+        board_B_minumim = 0;
+    }
+    board_B_center = board_B * 255.f;
+    board_B_maximum = (board_B + boardTolerances) * 255.f;
+    if (board_B_maximum > 255){
+        board_B_maximum = 255;
+    }
+
     size_t width = CGImageGetWidth(image);
     size_t height = CGImageGetHeight(image);
     imageSize = CGSizeMake(width, height);
@@ -280,18 +366,6 @@
 //    t = [NSDate.date timeIntervalSinceDate:startDate];
 //    NSLog(@"B Usage %.2f sec", t);
 
-    //不够纯白，就改为黑色。
-//    for (int x =0;x<width;x++){
-//        for (int y=0;y<height;y++){
-//            NSUInteger byteIndex = (bytesPerRow * y) + x * bytesPerPixel;
-//            CGFloat v = rawData[byteIndex];
-//            //纯黑色 0 -> 纯白色 255
-//            if (v < gate){
-//                rawData[byteIndex] = replaceValue;
-//            }
-//        }
-//    }
-
     BOOL fill = YES;   //将文字中间的镂空部位，去掉颜色改为透明
     if (fill){
         for (int x=workingPlace.origin.x;x<workingPlace.origin.x+workingPlace.size.width;x++){
@@ -300,14 +374,32 @@
                 unsigned short R = rawData[byteIndex];
                 unsigned short G = rawData[byteIndex+1];
                 unsigned short B = rawData[byteIndex+2];
-                unsigned short A = rawData[byteIndex+3];
+//                unsigned short A = rawData[byteIndex+3];
+                
+                //不是textcolor范围内的，全部填为board color
+                if (R >= text_R_minumim
+                    && R <= text_R_maximum
+                    && G >= text_G_minumim
+                    && G <= text_G_maximum
+                    && B >= text_B_minumim
+                    && B <= text_B_maximum){
+                    //在textColor范围内
+                }else{
+                    //填边颜色
+                    rawData[byteIndex] = board_R_center;
+                    rawData[byteIndex+1] = board_G_center;
+                    rawData[byteIndex+2] = board_B_center;
+                }
+                
+                /* 以前的黑边 白字代码
                 if (R < minumim && G < minumim && B < minumim && A > 220){
-                    //黑边改透明
-                    rawData[byteIndex] = 0;
-                    rawData[byteIndex+1] = 0;
-                    rawData[byteIndex+2] = 0;
+                    rawData[byteIndex] = board_R * 255;
+                    rawData[byteIndex+1] = board_G * 255;
+                    rawData[byteIndex+2] = board_B * 255;
                     rawData[byteIndex+3] = 255;
-                }else if (R > gate && G > gate && B > gate){
+                }else if (R > gate
+                          && G > gate
+                          && B > gate){
                     //黑边包裹的白色字内容
                 }else{
                     //字笔画包裹的镂空部位
@@ -315,7 +407,7 @@
                     rawData[byteIndex+1] = 0;
                     rawData[byteIndex+2] = 0;
                     rawData[byteIndex+3] = 255;
-                }
+                }*/
             }
         }
     }
@@ -323,8 +415,27 @@
     CGImageRef spreadImage = CGBitmapContextCreateImage(context);
     CGContextRelease(context);
     CGColorSpaceRelease(colorSpace);
-    free(rawData);
+    free(rawData);    
     return spreadImage;
+}
+
+-(CGImageRef)createRegionOfInterestImageFromFullImage:(CGImageRef)bigImage{
+    float width = regionOfInterest.size.width * imageSize.width;
+    float height = regionOfInterest.size.height * imageSize.height;
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGContextRef context = CGBitmapContextCreate(nil, width, height, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+    if (nil == context){
+        NSLog(@"stop here.");
+    }
+    CGRect rect = CGRectMake(-regionOfInterest.origin.x * imageSize.width,
+                             -regionOfInterest.origin.y * imageSize.height,
+                             imageSize.width,
+                             imageSize.height);
+    CGContextDrawImage(context, rect, bigImage);
+    CGImageRef smallImage = CGBitmapContextCreateImage(context);
+    CGContextRelease(context);
+    CGColorSpaceRelease(colorSpace);
+    return smallImage;
 }
 
 -(id)init{
@@ -354,4 +465,16 @@
     free(map);
 }
 
+-(VNFeaturePrintObservation *)observationWithCGImage:(CGImageRef)cgImage{
+    NSDictionary *opt = [NSDictionary dictionary];
+    VNImageRequestHandler *handler2 = [[VNImageRequestHandler alloc] initWithCGImage:cgImage options:opt];
+    VNGenerateImageFeaturePrintRequest *request2 = [[VNGenerateImageFeaturePrintRequest alloc] init];
+    NSError *error = nil;
+    BOOL success = [handler2 performRequests:@[request2] error:&error];
+    if (NO == success){
+        return nil;
+    }
+    VNFeaturePrintObservation *obs = request2.results.firstObject;
+    return obs;
+}
 @end

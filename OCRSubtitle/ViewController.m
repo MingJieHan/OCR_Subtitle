@@ -14,12 +14,16 @@
 #import "OCRImagePreprocessing.h"
 #import "OCRGetSampleBuffersFromVideo.h"
 
+#import "OCRProgressViewController.h"
+
 #define MAXIMUM_THREAD 4    //How many thread for get Text from image.
 
 @interface ViewController ()<UIDocumentPickerDelegate,UIDocumentBrowserViewControllerDelegate>{
     UIHansButton *selectFileButton;
     NSDate *startDate;
     UIAlertController *progressAlert;
+    
+    OCRProgressViewController *progressVC;
     NSURL *videoURL;
     CGRect regionOfInterest;
     
@@ -36,6 +40,9 @@
     
     int rateSampling;           //保留的样本率
     NSUInteger tolerance;       //SRT 时间输出的准许差
+    
+    
+    VNFeaturePrintObservation *lastObservation;
 }
 
 @end
@@ -44,6 +51,7 @@
 
 -(void)viewDidLoad{
     [super viewDidLoad];
+    progressVC = [[OCRProgressViewController alloc] init];
     
     selectFileButton = [[UIHansButton alloc] initWithFrame:CGRectMake( (self.view.frame.size.width-200.f)/2.f,
                                                                       200.f+30.f, 200.f, 60.f)];
@@ -109,9 +117,18 @@
     
 //    [self debugGetTextFromImage];
 
-//    [self debugMakeSRT];
-    
+//    [OCRManageSegment.shared loadSegments];
+//    [self makeSRT];
+
+//    Vladlen Koltun
+
 //    [self debugForMoreThread];
+    
+//    UIHansAboutViewController *v = [[UIHansAboutViewController alloc] init];
+//    v.handler = ^(NSURL * _Nonnull url) {
+//        
+//    };
+//    [UIHans.currentVC presentViewController:v animated:YES completion:nil];    
 }
 
 -(void)selectFileAction{
@@ -142,8 +159,7 @@
 
 -(void)pickupURLs:(NSArray <NSURL *>*)urls{
     videoURL = urls.firstObject;
-    progressAlert = [UIAlertController alertControllerWithTitle:@"进度" message:nil preferredStyle:UIAlertControllerStyleAlert];
-    [self presentViewController:progressAlert animated:YES completion:^{
+    [self presentViewController:progressVC animated:NO completion:^{
         [self startWork];
     }];
     return;
@@ -158,12 +174,30 @@
 }
 
 -(void)OCRSampleInThread:(SampleObject *)sample threadNum:(int)threadIndex{
-    CGImageRef cgImage = [sample createCGImage];
-    CGImageRef predImage = [[imagePre objectAtIndex:threadIndex] createSpreadCGImageFrom:cgImage
-                                          scopeMinumim:50
-                                               maximum:255
-                                          replaceValue:0
-                                                  gate:230];
+    CGImageRef sourceCGImage = [sample createCGImage];
+    CGImageRef predImage = [[imagePre objectAtIndex:threadIndex] createSpreadCGImageFrom:sourceCGImage
+                                        textColor:[UIColor whiteColor]
+                                        textTolerances:0.1f
+                                        boardColor:[UIColor blackColor]
+                                    boardTolerances:0.2f];
+
+    CGImageRef subtitleSourceImage = [[imagePre objectAtIndex:threadIndex] createRegionOfInterestImageFromFullImage:sourceCGImage];
+    CGImageRef subtitleImage = [[imagePre objectAtIndex:threadIndex] createRegionOfInterestImageFromFullImage:predImage];
+//    VNFeaturePrintObservation *obs = [[imagePre objectAtIndex:threadIndex] observationWithCGImage:subtitleImage];
+//    if (nil == lastObservation){
+//        lastObservation = obs;
+//    }else{
+//        float distance = 1.f;
+//        NSError *error = nil;
+//        BOOL success = [lastObservation computeDistance:&distance toFeaturePrintObservation:obs error:&error];
+//        if (distance > 0.35){
+//            NSLog(@"与前不同 :%.5f", distance);
+//        }else{
+//            NSLog(@"与前相同 :%.5f", distance);
+//        }
+//        lastObservation = obs;
+//    }
+    
 // 重载入测试开始
 //    UIImage *i = [[UIImage alloc] initWithCGImage:predImage];
 //    NSString *file = [[NSString alloc] initWithFormat:@"%@/Documents/Buffer_%d.png", NSHomeDirectory(),threadIndex];
@@ -171,6 +205,7 @@
 //    [UIImagePNGRepresentation(i) writeToFile:file atomically:YES];
 //    UIImage *readed = [[UIImage alloc] initWithContentsOfFile:file];
 //重载入测试结束
+    progressVC.image = predImage;
     
     [[textFromImage objectAtIndex:threadIndex] OCRImage:predImage withImageTime:[sample imageTime] handler:^(NSArray<OCRSegment *> * _Nonnull results) {
         for (OCRSegment *seg in results){
@@ -185,18 +220,21 @@
                 continue;
             }
             NSLog(@"%.2f sec:%@", seg.t, seg.string);
-//            NSString *debugString = @"这块59 看看这个robot";
+//            NSString *debugString = @"职亚个人不缴纳工伤保险费";
 //            if ([seg.string isEqualToString:debugString]){
 //                [self saveCGImage:cgImage withName:[NSString stringWithFormat:@"%.2f_source_%@", seg.t, seg.string]];
 //                [self saveCGImage:predImage withName:[NSString stringWithFormat:@"%.2f_pred_%@", seg.t, seg.string]];
 //                NSLog(@"Debug text");
 //            }
-            [OCRManageSegment.shared add:seg];
+            [OCRManageSegment.shared add:seg withSubtitleImage:subtitleImage withSource:subtitleSourceImage];
         }
         float progress = [sample imageTime]/(self->bufferFromVideo.duration.value/self->bufferFromVideo.duration.timescale);
+        self->progressVC.progress = progress;
         [self showProgress:progress withString:@""];
     }];
-    CGImageRelease(cgImage);
+    CGImageRelease(subtitleImage);
+    CGImageRelease(subtitleSourceImage);
+    CGImageRelease(sourceCGImage);
     CGImageRelease(predImage);
 }
 
@@ -255,19 +293,21 @@
 
 -(void)startWork{
     [UIApplication.sharedApplication setIdleTimerDisabled:YES];
+    
     //从头开始
     int minute = 0;
     int second = 0;
-    minute = 5;
-    second = 6;
+    minute = 10;
+    second = 59;
     
+    [OCRManageSegment.shared clear];
     [videoURL startAccessingSecurityScopedResource];
     NSLog(@"start load images.");
     [self showProgress:0.f withString:@"提取视频中的图片"];
     
     startDate = NSDate.date;
     float start = minute * 60 + second;
-//    bufferFromVideo = [[OCRGetSampleBuffersFromVideo alloc] initWithVideoURL:videoURL withBegin:start withEnd:start+2.f];
+//    bufferFromVideo = [[OCRGetSampleBuffersFromVideo alloc] initWithVideoURL:videoURL withBegin:start withEnd:start+20.f];
     bufferFromVideo = [[OCRGetSampleBuffersFromVideo alloc] initWithVideoURL:videoURL];
     [NSThread detachNewThreadWithBlock:^{
         [self getVideoThread];
@@ -302,12 +342,17 @@
 -(void)completedInMainThread{
     [UIApplication.sharedApplication setIdleTimerDisabled:NO];
     [videoURL stopAccessingSecurityScopedResource];
-    [progressAlert dismissViewControllerAnimated:YES completion:^{
-        NSString *segmentsFile = [NSHomeDirectory() stringByAppendingString:@"/Documents/segments.plist"];
-        [OCRManageSegment.shared saveSegmentsInto:segmentsFile];
+    
+    [progressVC dismissViewControllerAnimated:YES completion:^{
+        [OCRManageSegment.shared saveSegments];
         [self makeSRT];
     }];
     return;
+//    [progressAlert dismissViewControllerAnimated:YES completion:^{
+//        [OCRManageSegment.shared saveSegments];
+//        [self makeSRT];
+//    }];
+//    return;
 }
 
 -(void)makeSRT{
@@ -322,6 +367,7 @@
     [df setTimeZone:NSTimeZone.systemTimeZone];
     [df setDateFormat:@"yyyyMMdd_HHmmss"];
     NSString *file = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/%@_%@.srt.txt", [df stringFromDate:NSDate.date], name];
+    
     [OCRManageSegment.shared makeSRT:file withTolerance:tolerance];
     [UIHans shareFile:file];
 }
@@ -391,10 +437,14 @@
         }];
         
         CGImageRef resImage = [[self->imagePre objectAtIndex:0] createSpreadCGImageFrom:image.CGImage
-                                                         scopeMinumim:50
-                                                              maximum:255
-                                                         replaceValue:0
-                                                                 gate:200];
+                                                    textColor:[UIColor whiteColor]
+                                                textTolerances:0.1f
+                                                    boardColor:[UIColor blackColor]
+                                                boardTolerances:0.2f];
+//                                                         scopeMinumim:50
+//                                                              maximum:255
+//                                                         replaceValue:0
+//                                                                 gate:200];
         UIImage *newImage = [[UIImage alloc] initWithCGImage:resImage];
         NSString *file = [NSHomeDirectory() stringByAppendingString:@"/Documents/swap.png"];
         [NSFileManager.defaultManager removeItemAtPath:file error:nil];
@@ -431,10 +481,14 @@
                 UIImage *image = [[UIImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"test" ofType:@"png"]];
                 OCRImagePreprocessing *imageThreadPre = [[OCRImagePreprocessing alloc] initWithRegionOfInterest:self->regionOfInterest];
                 CGImageRef resImage = [imageThreadPre createSpreadCGImageFrom:image.CGImage
-                                                                 scopeMinumim:50
-                                                                      maximum:255
-                                                                 replaceValue:0
-                                                                         gate:200];
+                                                                    textColor:[UIColor whiteColor]
+                                                               textTolerances:0.1f
+                                                                   boardColor:[UIColor blackColor]
+                                                              boardTolerances:0.2f];
+//                                                                 scopeMinumim:50
+//                                                                      maximum:255
+//                                                                 replaceValue:0
+//                                                                         gate:200];
                 OCRGetTextFromImage *textFromImageThread = [[OCRGetTextFromImage alloc] initWithLanguage:self->subtitleLanguages
                                                                                    withMinimumTextHeight:self->minimumTextHeight
                                                                                     withRegionOfInterest:self->regionOfInterest];
@@ -453,13 +507,4 @@
     }
 }
 
--(void)debugMakeSRT{
-    NSString *segmentsFile = [NSHomeDirectory() stringByAppendingString:@"/Documents/segments.plist"];
-    if ([NSFileManager.defaultManager fileExistsAtPath:segmentsFile]){
-        NSLog(@"Load exist segments.");
-        [OCRManageSegment.shared loadSegmentsFrom:segmentsFile];
-        [self makeSRT];
-    }
-    return;
-}
 @end

@@ -6,6 +6,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <Vision/Vision.h>
 
 NS_ASSUME_NONNULL_BEGIN
 @interface OCRImagePreprocessing : NSObject
@@ -28,10 +29,17 @@ NS_ASSUME_NONNULL_BEGIN
  最后，白色字包裹的中间，仍有一些像素为图片背景色，通过gate参数，将这些背景像素全部填充为value
  */
 -(CGImageRef)createSpreadCGImageFrom:(CGImageRef)image
-                        scopeMinumim:(NSUInteger)min
-                             maximum:(NSUInteger)max
-                        replaceValue:(NSUInteger)value
-                                gate:(NSUInteger)gate;
+                           textColor:(UIColor *)textColor
+                      textTolerances:(float)textTolerances
+                          boardColor:(UIColor *)boardColor
+                     boardTolerances:(float)boardTolerances;
+//                        scopeMinumim:(NSUInteger)min
+//                             maximum:(NSUInteger)max
+//                        replaceValue:(NSUInteger)value
+//                                gate:(NSUInteger)gate;
 @property (nonatomic,readonly) CGRect regionOfInterest;
+
+-(CGImageRef)createRegionOfInterestImageFromFullImage:(CGImageRef)spreadCGImage;
+-(VNFeaturePrintObservation *)observationWithCGImage:(CGImageRef)image;
 @end
 NS_ASSUME_NONNULL_END

@@ -38,7 +38,8 @@
 #import <HansServer/UIHansSwitchView.h>
 #import <HansServer/HansOfflineView.h>
 #import <HansServer/HansRefresher.h>
-
+#import <HansServer/HansLocal.h>
+#import <HansServer/HansProgressBarView.h>
 #pragma mark - NetWork
 #import <HansServer/UIHansNetworkImageView.h>
 

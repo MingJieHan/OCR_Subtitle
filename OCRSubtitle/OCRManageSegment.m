@@ -36,32 +36,19 @@ static OCRManageSegment *staticOCRManageSegment;
     return staticOCRManageSegment;
 }
 
--(BOOL)saveSegmentsInto:(NSString *)targetFile{
-    NSMutableArray *array = [[NSMutableArray alloc] init];
-    for (OCRSegment *seg in segments){
-        [array addObject:[seg dictionary]];
-    }
-    return [array writeToFile:targetFile atomically:YES];
+-(BOOL)saveSegments{
+    BOOL success = [OCRSegment archivedSave:segments];
+    return success;
 }
 
--(BOOL)loadSegmentsFrom:(NSString *)fromFile{
-    if (nil == fromFile){
-        return NO;
-    }
-    NSArray *array = [[NSArray alloc] initWithContentsOfFile:fromFile];
-    if (nil == array){
-        return NO;
-    }
-    [segments removeAllObjects];
-    for (NSDictionary *dict in array){
-        OCRSegment *seg = [[OCRSegment alloc] initWithDictionary:dict];
-        [segments addObject:seg];
-    }
+-(BOOL)loadSegments{
+    segments = [OCRSegment unarchivedLastSegments];
     return YES;
 }
 
--(void)add:(OCRSegment *)segment{
+-(void)add:(OCRSegment *)segment withSubtitleImage:(CGImageRef)subtitleCGImage withSource:(CGImageRef)subtitleSourceCGImage{
     pthread_mutex_lock(&mutex);
+    [segment buildObservationWithCGImage:subtitleCGImage withSource:subtitleSourceCGImage];
     [segments addObject:segment];
     pthread_mutex_unlock(&mutex);
 }
@@ -69,6 +56,7 @@ static OCRManageSegment *staticOCRManageSegment;
 -(void)clear{
     pthread_mutex_lock(&mutex);
     [segments removeAllObjects];
+    [OCRSegment clearImages];
     pthread_mutex_unlock(&mutex);
 }
 
@@ -125,7 +113,7 @@ static OCRManageSegment *staticOCRManageSegment;
     }
     NSString *s1 = [str1 stringByReplacingOccurrencesOfString:@" " withString:@""];
     NSString *s2 = [str2 stringByReplacingOccurrencesOfString:@" " withString:@""];
-    return [s1 isEqualToString:s2];
+    return [[s1 lowercaseString] isEqualToString:[s2 lowercaseString]];
 }
 
 -(BOOL)makeSRT:(NSString *)srtFile withTolerance:(NSUInteger)tolerance{
@@ -178,15 +166,31 @@ static OCRManageSegment *staticOCRManageSegment;
             //遇到了相同字符串的
             lastSeg = seg;
             continue;
-        }else{
-            //遇到不同字符串输出
-            NSString *srtString = [self exportSRTPartFrom:firstSeg to:lastSeg withIndex:index tolerance:tolerance];
-            [result appendString:srtString];
-            [result appendString:@"\n\n"];
-            index ++;
-            firstSeg = seg;
-            lastSeg = nil;
         }
+        
+        float distance = [seg distanceWith:lastSeg];
+        float source_distance = [seg sourceDistanceWith:lastSeg];
+        if (distance < 0.3f){
+            NSLog(@"处理后 图片相似性判定为相同字符串:\n%@\n%@", seg.string, lastSeg.string);
+            //判定为相同字符串的
+            lastSeg = seg;
+            continue;
+        }
+
+        if (source_distance < 0.3f){
+            NSLog(@"原图片相似性判定为相同字符串:\n%@\n%@", seg.string, lastSeg.string);
+            //判定为相同字符串的
+            lastSeg = seg;
+            continue;
+        }
+        
+        //遇到不同字符串输出
+        NSString *srtString = [self exportSRTPartFrom:firstSeg to:lastSeg withIndex:index tolerance:tolerance];
+        [result appendString:srtString];
+        [result appendString:@"\n\n"];
+        index ++;
+        firstSeg = seg;
+        lastSeg = nil;
     }
     
     //append write last seg
