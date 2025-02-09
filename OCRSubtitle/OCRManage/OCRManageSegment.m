@@ -48,7 +48,9 @@ static OCRManageSegment *staticOCRManageSegment;
 
 -(void)add:(OCRSegment *)segment withSubtitleImage:(CGImageRef)subtitleCGImage withSource:(CGImageRef)subtitleSourceCGImage{
     pthread_mutex_lock(&mutex);
-    [segment buildObservationWithCGImage:subtitleCGImage withSource:subtitleSourceCGImage];
+    [segment buildObservationWithCGImage:subtitleCGImage
+                              withSource:subtitleSourceCGImage
+                               saveDebug:NO];
     [segments addObject:segment];
     pthread_mutex_unlock(&mutex);
 }

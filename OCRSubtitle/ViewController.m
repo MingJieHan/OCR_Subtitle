@@ -13,36 +13,36 @@
 #import "OCRGetTextFromImage.h"
 #import "OCRImagePreprocessing.h"
 #import "OCRGetSampleBuffersFromVideo.h"
-
+#import "OCRSetting.h"
 #import "OCRProgressViewController.h"
+#import "OCRTemplateCollectionView.h"
+#import "OCRHistoryCollectionView.h"
+#import "OCRSubtitleManage.h"
 
 #define MAXIMUM_THREAD 4    //How many thread for get Text from image.
 
 @interface ViewController ()<UIDocumentPickerDelegate,UIDocumentBrowserViewControllerDelegate>{
-    UIHansButton *selectFileButton;
+    UIHansButton *debugButton;
     NSDate *startDate;
-    UIAlertController *progressAlert;
-    
-    OCRProgressViewController *progressVC;
     NSURL *videoURL;
-    CGRect regionOfInterest;
+    OCRProgressViewController *progressVC;
+    
     
     NSMutableArray <NSNumber *>*debugGetImagesFromVideo;  //从视频中提取图片， 值是 提取图片的时间值,单位ms
-    NSArray *subtitleLanguages;
-    float minimumTextHeight;
+    NSMutableArray <NSThread *> *threads;
     
-    NSMutableArray <NSThread *>*threads;
-//    OCRGetImageFromVideo *imageFromVideo;   //视频提取图片
     OCRGetSampleBuffersFromVideo *bufferFromVideo;
     NSMutableArray <OCRImagePreprocessing *>*imagePre;   ///图片预处理
     NSMutableArray <OCRGetTextFromImage *>*textFromImage;   //图片提取文字
+    
     BOOL loadVideoCompleted;
-    
-    int rateSampling;           //保留的样本率
-    NSUInteger tolerance;       //SRT 时间输出的准许差
-    
-    
     VNFeaturePrintObservation *lastObservation;
+    OCRSetting *setting;
+    
+    OCRTemplateCollectionView *templateView;
+    OCRHistoryCollectionView *historyView;
+    UILabel *verLabel;
+    UIImage *thumbnailCGImage;
 }
 
 @end
@@ -51,61 +51,77 @@
 
 -(void)viewDidLoad{
     [super viewDidLoad];
+    NSLog(@"Home:%@", NSHomeDirectory());
     progressVC = [[OCRProgressViewController alloc] init];
     
-    selectFileButton = [[UIHansButton alloc] initWithFrame:CGRectMake( (self.view.frame.size.width-200.f)/2.f,
-                                                                      200.f+30.f, 200.f, 60.f)];
-    selectFileButton.enabled = YES;
-    selectFileButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleRightMargin|UIViewAutoresizingFlexibleBottomMargin;
+    debugButton = [[UIHansButton alloc] initWithFrame:CGRectMake( 0.f,self.view.frame.size.height-50.f, 200.f, 50.f)];
+    debugButton.enabled = YES;
+    debugButton.autoresizingMask = UIViewAutoresizingFlexibleRightMargin|UIViewAutoresizingFlexibleTopMargin;
     UIImage *image = [[UIImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"files" ofType:@"png"]];
-    [selectFileButton setImage:image forState:UIControlStateNormal];
-    [selectFileButton setTitle:NSLocalizedString(@"Media from \"Files\"", nil)
+    [debugButton setImage:image forState:UIControlStateNormal];
+    [debugButton setTitle:NSLocalizedString(@"Debug", nil)
                       forState:UIControlStateNormal];
-    [selectFileButton addTarget:self action:@selector(selectFileAction) forControlEvents:UIControlEventTouchUpInside];
-    [selectFileButton setBackgroundColor:[UIHans blue] forState:UIControlStateNormal];
-    [selectFileButton setBackgroundColor:[UIHans blueHighlighted] forState:UIControlStateHighlighted];
-    [self.view addSubview:selectFileButton];
+    [debugButton addTarget:self action:@selector(debugAction) forControlEvents:UIControlEventTouchUpInside];
+    [debugButton setBackgroundColor:[UIHans blue] forState:UIControlStateNormal];
+    [debugButton setBackgroundColor:[UIHans blueHighlighted] forState:UIControlStateHighlighted];
+    [self.view addSubview:debugButton];
     
-    float y = CGRectGetMaxY(selectFileButton.frame)+20.f;
+    ViewController * __strong strongSelf = self;
+    float y = 400.f;
+    templateView = [[OCRTemplateCollectionView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.view.frame.size.width, y)];
+    templateView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    templateView.openHandler = ^(OCRSetting * _Nonnull selectedSetting) {
+        self->setting = selectedSetting;
+        [strongSelf selectFileAction];
+    };
+    templateView.editHandler = ^(OCRSetting * _Nonnull selectedSetting) {
+        [strongSelf editSetting:selectedSetting];
+    };
+    [self.view addSubview:templateView];
+    
+    y += 10.f;
+    historyView = [[OCRHistoryCollectionView alloc] initWithFrame:CGRectMake(0.f, y, self.view.frame.size.width, self.view.frame.size.height-y-40.f)];
+    historyView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
+    historyView.shareHandler = ^(OCRHistory * _Nonnull history) {
+        [strongSelf moreActionWith:history];
+    };
+    historyView.openHandler = ^(OCRHistory * _Nonnull history) {
+        [strongSelf openFile:history.file];
+    };
+    [self.view addSubview:historyView];
+    
+    
+    verLabel = [[UILabel alloc] initWithFrame:CGRectMake(0.f, self.view.frame.size.height-40.f, self.view.frame.size.width, 30.f)];
+    verLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin;
+    verLabel.font = [UIFont fontWithName:@"PingFangSC-Light" size:12.f];
+    verLabel.textAlignment = NSTextAlignmentCenter;
+    verLabel.text = [NSString stringWithFormat:@"OCR Subtitle ver:%@ buile:%@", UIHans.appVersion, UIHans.appBuildVersion];
+    [self.view addSubview:verLabel];
+    
+    y = CGRectGetMaxY(debugButton.frame)+20.f;
     UILabel *l = [[UILabel alloc] initWithFrame:CGRectMake(10.f, y, self.view.frame.size.width-20.f, self.view.frame.size.height-y-40.f)];
     l.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
     l.numberOfLines = 10;
     l.text = @"字幕文字颜色纯白、黑色边框不少于 “60”， 字体大小不可变、字幕居中、所在上下位置不动、不可用渐入渐出特效。";
-    [self.view addSubview:l];
-    
-    //    Video size 888 x 1920
-        //通过忽略很小的字， 去掉了视频1:46秒位置，字幕文字前面的 24小字
-    //    float minimumTextHeight = 30.f/1490.f;
-    //    NSString *subtitleLanguage = @"zh-Hans";
-    //    regionOfInterest = CGRectMake(0.f, 125.f/1774.f, 1.f, 120.f/1774.f);
+//    [self.view addSubview:l];
 
-    //Video size 1920 x 1080
-    minimumTextHeight = 42.f/1080.f;
-    subtitleLanguages = @[@"zh-Hans", @"en-US"];  //支持简体中文和英文
-        
-        //for 牛
-    //    regionOfInterest = CGRectMake(0.1f, 30.f/1080.f, 0.8f, 80.f/1080.f);
-    
-    // for Eva
-    regionOfInterest = CGRectMake(0.1f, 104.f/1080.f, 0.8f, 80.f/1080.f);
-    
-    //Test
-//    regionOfInterest = CGRectMake(0.0f, 0.f, 1.f, 1.f);
-    
-    
-    rateSampling = 3;tolerance = 50;   //30fps的视频 每3张图，取1张，图间隔100ms，公差为50ms
-//    rateSampling = 1;tolerance = 15;   //30fps的视频 每张图都参与，图间隔30ms，公差为15ms
-    
-    textFromImage = [[NSMutableArray alloc] init];
-    imagePre = [[NSMutableArray alloc] init];
-    for (int i=0;i<MAXIMUM_THREAD;i++){
-        OCRGetTextFromImage *o = [[OCRGetTextFromImage alloc] initWithLanguage:subtitleLanguages
-                                                withMinimumTextHeight:minimumTextHeight
-                                                withRegionOfInterest:regionOfInterest];
-        [textFromImage addObject:o];
-        OCRImagePreprocessing *imagePreObject = [[OCRImagePreprocessing alloc] initWithRegionOfInterest:regionOfInterest];
-        [imagePre addObject:imagePreObject];
+    NSArray *languages = [OCRGetTextFromImage sortedAvailableLanguages];
+    for (NSString *descriptString in languages){
+        NSLog(@"%@", descriptString);
     }
+}
+
+-(void)openFile:(NSString *)file{
+    NSURL *url = [NSURL fileURLWithPath:file];
+    UIDocumentInteractionController *c = [UIDocumentInteractionController interactionControllerWithURL:url];
+    c.delegate = UIHans.defaultUIHans;
+    BOOL opend = [c presentPreviewAnimated:YES];
+    return;
+}
+
+-(void)moreActionWith:(OCRHistory *)anHistory{
+    [historyView removeObject:anHistory];
+    return;
 }
 
 -(void)viewDidAppear:(BOOL)animated{
@@ -157,32 +173,39 @@
     return;
 }
 
--(void)pickupURLs:(NSArray <NSURL *>*)urls{
-    videoURL = urls.firstObject;
-    [self presentViewController:progressVC animated:NO completion:^{
-        [self startWork];
-    }];
+-(void)editSetting:(OCRSetting *)editSetting{
     return;
 }
 
--(void)showProgress:(float)progress withString:(NSString *)string{
-    dispatch_async(dispatch_get_main_queue(), ^{
-        self->progressAlert.title = string;
-        self->progressAlert.message = [[NSString alloc] initWithFormat:@"%.2f%%", progress * 100.f];
-    });
+-(void)pickupURLs:(NSArray <NSURL *>*)urls{
+    videoURL = urls.firstObject;
+    [self presentViewController:progressVC animated:NO completion:^{
+        self->progressVC.gottedStringBorderColor = self->setting.borderColor;
+        self->progressVC.gottedStringBorderWidth = 3.f;
+        self->progressVC.passTopRate = self->setting.passTopRate;
+        self->progressVC.heightRate = self->setting.heightRate;
+        [self startWork];
+    }];
     return;
 }
 
 -(void)OCRSampleInThread:(SampleObject *)sample threadNum:(int)threadIndex{
     CGImageRef sourceCGImage = [sample createCGImage];
     CGImageRef predImage = [[imagePre objectAtIndex:threadIndex] createSpreadCGImageFrom:sourceCGImage
-                                        textColor:[UIColor whiteColor]
-                                        textTolerances:0.1f
-                                        boardColor:[UIColor blackColor]
+                                        textColor:setting.textColor
+                                    textTolerances:0.1f
+                                        boardColor:setting.borderColor
                                     boardTolerances:0.2f];
-
     CGImageRef subtitleSourceImage = [[imagePre objectAtIndex:threadIndex] createRegionOfInterestImageFromFullImage:sourceCGImage];
+    if (nil == subtitleSourceImage){
+        NSLog(@"Stop debug.");
+        return;
+    }
     CGImageRef subtitleImage = [[imagePre objectAtIndex:threadIndex] createRegionOfInterestImageFromFullImage:predImage];
+    if (nil == subtitleImage){
+        NSLog(@"Stop debug.");
+        return;
+    }
 //    VNFeaturePrintObservation *obs = [[imagePre objectAtIndex:threadIndex] observationWithCGImage:subtitleImage];
 //    if (nil == lastObservation){
 //        lastObservation = obs;
@@ -199,15 +222,17 @@
 //    }
     
 // 重载入测试开始
-//    UIImage *i = [[UIImage alloc] initWithCGImage:predImage];
+//    UIImage *i = [[UIImage alloc] initWithCGImage:subtitleSourceImage];
 //    NSString *file = [[NSString alloc] initWithFormat:@"%@/Documents/Buffer_%d.png", NSHomeDirectory(),threadIndex];
 //    [NSFileManager.defaultManager removeItemAtPath:file error:nil];
 //    [UIImagePNGRepresentation(i) writeToFile:file atomically:YES];
 //    UIImage *readed = [[UIImage alloc] initWithContentsOfFile:file];
 //重载入测试结束
-    progressVC.image = predImage;
+    progressVC.image = sourceCGImage;
     
-    [[textFromImage objectAtIndex:threadIndex] OCRImage:predImage withImageTime:[sample imageTime] handler:^(NSArray<OCRSegment *> * _Nonnull results) {
+    [[textFromImage objectAtIndex:threadIndex] OCRImage:predImage
+                                          withImageTime:[sample imageTime]
+                                                handler:^(NSArray<OCRSegment *> * _Nonnull results) {
         for (OCRSegment *seg in results){
             if (seg.confidence <= 0.4f){
                 NSLog(@"信心不足 %.2f, 丢弃:%@",seg.confidence, seg.string);
@@ -220,17 +245,18 @@
                 continue;
             }
             NSLog(@"%.2f sec:%@", seg.t, seg.string);
+            self->progressVC.gottedString = seg.string;
 //            NSString *debugString = @"职亚个人不缴纳工伤保险费";
 //            if ([seg.string isEqualToString:debugString]){
 //                [self saveCGImage:cgImage withName:[NSString stringWithFormat:@"%.2f_source_%@", seg.t, seg.string]];
 //                [self saveCGImage:predImage withName:[NSString stringWithFormat:@"%.2f_pred_%@", seg.t, seg.string]];
 //                NSLog(@"Debug text");
 //            }
+            self->thumbnailCGImage = [[UIImage alloc] initWithCGImage:sourceCGImage];
             [OCRManageSegment.shared add:seg withSubtitleImage:subtitleImage withSource:subtitleSourceImage];
         }
         float progress = [sample imageTime]/(self->bufferFromVideo.duration.value/self->bufferFromVideo.duration.timescale);
         self->progressVC.progress = progress;
-        [self showProgress:progress withString:@""];
     }];
     CGImageRelease(subtitleImage);
     CGImageRelease(subtitleSourceImage);
@@ -264,7 +290,7 @@
 
 -(void)getVideoThread{
     loadVideoCompleted = NO;
-    int sampleNum = 0;
+    float lastSecond = -1.f;
     while (NO == loadVideoCompleted) {
         if (self->bufferFromVideo.ready){
             CMSampleBufferRef sampleBuffer = [self->bufferFromVideo copyNextBuffer];
@@ -272,12 +298,17 @@
                 loadVideoCompleted = YES;
                 break;
             }
-            sampleNum ++;
-            if (0 != sampleNum%rateSampling){
+            
+            CMTime t = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
+            float theSecond = (float)t.value/(float)t.timescale;
+            
+            if (theSecond - lastSecond < [setting minimumFrameSpacing]){
                 CFRelease(sampleBuffer);
                 sampleBuffer = nil;
                 continue;
             }
+            lastSecond = theSecond;
+            
             [OCRManageSegment.shared appendSample:sampleBuffer];
             while ([OCRManageSegment.shared numOfCurrentSamples] > 20) {
                 [NSThread sleepForTimeInterval:0.1];
@@ -291,24 +322,59 @@
     return;
 }
 
+-(void)exceptStopWithErrorString:(NSString *)string{
+    [progressVC dismissViewControllerAnimated:YES completion:^{
+        [self->videoURL stopAccessingSecurityScopedResource];
+        [UIApplication.sharedApplication setIdleTimerDisabled:NO];
+        [UIHans alertTitle:@"Error" withMessage:string];
+    }];
+    return;
+}
+
 -(void)startWork{
     [UIApplication.sharedApplication setIdleTimerDisabled:YES];
-    
-    //从头开始
-    int minute = 0;
-    int second = 0;
-    minute = 10;
-    second = 59;
     
     [OCRManageSegment.shared clear];
     [videoURL startAccessingSecurityScopedResource];
     NSLog(@"start load images.");
-    [self showProgress:0.f withString:@"提取视频中的图片"];
     
     startDate = NSDate.date;
-    float start = minute * 60 + second;
-//    bufferFromVideo = [[OCRGetSampleBuffersFromVideo alloc] initWithVideoURL:videoURL withBegin:start withEnd:start+20.f];
     bufferFromVideo = [[OCRGetSampleBuffersFromVideo alloc] initWithVideoURL:videoURL];
+    if (bufferFromVideo.videoSize.width != setting.videoWidth || bufferFromVideo.videoSize.height != setting.videoHeight){
+        //Warning for different size with setting.
+        float vRate = bufferFromVideo.videoSize.width/bufferFromVideo.videoSize.height;
+        float sRate = (float)setting.videoWidth/(float)setting.videoHeight;
+        NSString *errorString = nil;
+        if (vRate == sRate){
+            //视频宽高比例相同
+        }else{
+            //视频宽高比例不同
+        }
+        errorString = [NSString stringWithFormat:@"Template size is %ld x %ld, but video size is %.0f x %.0f", setting.videoWidth, setting.videoHeight, bufferFromVideo.videoSize.width, bufferFromVideo.videoSize.height];
+        [self exceptStopWithErrorString:errorString];
+        return;
+    }
+    
+    if (textFromImage){
+        [textFromImage removeAllObjects];
+    }else{
+        textFromImage = [[NSMutableArray alloc] init];
+    }
+    if (imagePre){
+        [imagePre removeAllObjects];
+    }else{
+        imagePre = [[NSMutableArray alloc] init];
+    }
+    for (int i=0;i<MAXIMUM_THREAD;i++){
+        OCRGetTextFromImage *o = [[OCRGetTextFromImage alloc] initWithLanguage:setting.subtitleLanguages
+                                                         withMinimumTextHeight:setting.heightRate
+                                                          withRegionOfInterest:[setting regionOfInterest]];
+        [textFromImage addObject:o];
+        
+        OCRImagePreprocessing *imagePreObject = [[OCRImagePreprocessing alloc] initWithRegionOfInterest:[setting regionOfInterest]];
+        [imagePre addObject:imagePreObject];
+    }
+    
     [NSThread detachNewThreadWithBlock:^{
         [self getVideoThread];
     }];
@@ -348,11 +414,22 @@
         [self makeSRT];
     }];
     return;
-//    [progressAlert dismissViewControllerAnimated:YES completion:^{
-//        [OCRManageSegment.shared saveSegments];
-//        [self makeSRT];
-//    }];
-//    return;
+}
+
+-(void)debugAction{
+    OCRHistory *item = [OCRSubtitleManage.shared createOCRResult];
+    item.file = @"test";
+    item.videoFileName = @"name";
+    item.srtInfo = @"info";
+    item.completedDate = NSDate.date;
+    item.usageSeconds = [NSDate.date timeIntervalSinceDate:startDate];
+    item.thumbnailImageData = nil;
+    item.sampleRate = 10;
+    item.languageString = @"zh-Hans";
+    [item save];
+    
+    [historyView addObject:item];
+    return;
 }
 
 -(void)makeSRT{
@@ -368,8 +445,24 @@
     [df setDateFormat:@"yyyyMMdd_HHmmss"];
     NSString *file = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/%@_%@.srt.txt", [df stringFromDate:NSDate.date], name];
     
-    [OCRManageSegment.shared makeSRT:file withTolerance:tolerance];
+    [OCRManageSegment.shared makeSRT:file withTolerance:[setting tolerance]];
+    
+
+    OCRHistory *item = [OCRSubtitleManage.shared createOCRResult];
+    item.file = file;
+    item.videoFileName = name;
+    item.srtInfo = [[NSString alloc] initWithContentsOfFile:file encoding:NSUTF8StringEncoding error:nil];
+    item.completedDate = NSDate.date;
+    item.usageSeconds = [NSDate.date timeIntervalSinceDate:startDate];
+    item.thumbnailImageData = UIImageJPEGRepresentation(thumbnailCGImage, 0.7);
+    item.sampleRate = setting.rate;
+    item.languageString = setting.languageString;
+    [item save];
+    
+    [historyView addObject:item];
+    
     [UIHans shareFile:file];
+    
 }
 
 #pragma mark - UIDocumentPickerDelegate
@@ -479,7 +572,7 @@
             NSInteger loop = 100;
             while (loop > 0) {
                 UIImage *image = [[UIImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"test" ofType:@"png"]];
-                OCRImagePreprocessing *imageThreadPre = [[OCRImagePreprocessing alloc] initWithRegionOfInterest:self->regionOfInterest];
+                OCRImagePreprocessing *imageThreadPre = [[OCRImagePreprocessing alloc] initWithRegionOfInterest:[self->setting regionOfInterest]];
                 CGImageRef resImage = [imageThreadPre createSpreadCGImageFrom:image.CGImage
                                                                     textColor:[UIColor whiteColor]
                                                                textTolerances:0.1f
@@ -489,9 +582,9 @@
 //                                                                      maximum:255
 //                                                                 replaceValue:0
 //                                                                         gate:200];
-                OCRGetTextFromImage *textFromImageThread = [[OCRGetTextFromImage alloc] initWithLanguage:self->subtitleLanguages
-                                                                                   withMinimumTextHeight:self->minimumTextHeight
-                                                                                    withRegionOfInterest:self->regionOfInterest];
+                OCRGetTextFromImage *textFromImageThread = [[OCRGetTextFromImage alloc] initWithLanguage:self->setting.subtitleLanguages
+                                                                                   withMinimumTextHeight:self->setting.heightRate
+                                                                                    withRegionOfInterest:[self->setting regionOfInterest]];
                 [textFromImageThread OCRImage:resImage withImageTime:0.1 handler:^(NSArray<OCRSegment *> * _Nonnull results) {
                     for (OCRSegment *seg in results){
                         NSLog(@"%@", seg.string);

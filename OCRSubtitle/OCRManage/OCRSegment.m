@@ -110,8 +110,8 @@
 }
 
 -(void)buildObservationWithCGImage:(CGImageRef)subtitleCGImage
-                        withSource:(CGImageRef)subtitleSourceCGImage{
-    BOOL savePNGFile = YES;
+                        withSource:(CGImageRef)subtitleSourceCGImage
+                         saveDebug:(BOOL)savePNGFile{
     NSString *file = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
     file = [file stringByAppendingPathComponent:@"images"];
     if (NO == [NSFileManager.defaultManager fileExistsAtPath:file]){

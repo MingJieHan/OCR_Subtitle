@@ -24,6 +24,51 @@
     return results;
 }
 
++(NSString *)stringForLanguageCode:(NSString *)languageIdentifier{
+//    NSString *language = [NSLocale.systemLocale localizedStringForLanguageCode:languageIdentifier];
+    NSDictionary *dict = [NSLocale componentsFromLocaleIdentifier:languageIdentifier];
+    NSString *countryCode = [dict valueForKey:@"kCFLocaleCountryCodeKey"];
+    NSString *scriptCode = [dict valueForKey:@"kCFLocaleScriptCodeKey"];
+    NSString *localLanguageCode = [dict valueForKey:@"kCFLocaleLanguageCodeKey"];
+    
+    NSString *scriptString = nil;
+    if (scriptCode){
+        scriptString = [NSLocale.systemLocale localizedStringForScriptCode:scriptCode];
+    }
+    
+    NSString *languageString = nil;
+    if (localLanguageCode){
+        languageString = [NSLocale.systemLocale localizedStringForLanguageCode:localLanguageCode];
+    }
+    
+    NSString *countryString = nil;
+    if (countryCode){
+        countryString = [NSLocale.systemLocale localizedStringForCountryCode:countryCode];
+    }
+    
+    if (countryString){
+        return [NSString stringWithFormat:@"%@ (%@)", languageString, countryString];
+    }
+    if (scriptString){
+        return [NSString stringWithFormat:@"%@ (%@)", languageString, scriptString];
+    }
+    return languageString;
+}
+
+
++(NSArray *)sortedAvailableLanguages{
+    NSMutableArray *res = [[NSMutableArray alloc] init];
+    for (NSString *iii in [OCRGetTextFromImage availableLanguages]){
+        [res addObject:[OCRGetTextFromImage stringForLanguageCode:iii]];
+    }
+    [res sortUsingComparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
+        NSString *str1 = obj1;
+        NSString *str2 = obj2;
+        return [str1 compare:str2];
+    }];
+    return res;
+}
+
 -(id)initWithLanguage:(NSArray<NSString *> *)subtitleLanguages
     withMinimumTextHeight:(float)minimumHeight
     withRegionOfInterest:(CGRect)regionRect{
@@ -59,7 +104,6 @@
                 return nil;
             }
         }
-        
         request.recognitionLanguages = subtitleLanguages;
         
         // slows recognition.

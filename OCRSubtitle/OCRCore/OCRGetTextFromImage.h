@@ -13,9 +13,21 @@ typedef void (^OCRGetTextFromImage_Handler) (NSArray <OCRSegment *> * _Nonnull r
 
 NS_ASSUME_NONNULL_BEGIN
 @interface OCRGetTextFromImage : NSObject
--(id)init NS_UNAVAILABLE;
-
+/*
+ NSArray *languages = [OCRGetTextFromImage availableLanguages];
+ for (NSString *languageIdentifier in languages){
+     NSString *descriptString = [OCRGetTextFromImage stringForLanguageCode:languageIdentifier];
+     NSLog(@"%@: %@", languageIdentifier, descriptString);
+ }
+ */
 +(NSArray <NSString *>*)availableLanguages;
+
+//[OCRGetTextFromImage stringForLanguageCode:@"zh-Hans"];
++(NSString *)stringForLanguageCode:(NSString *)languageIdentifier;
+
++(NSArray *)sortedAvailableLanguages;
+
+-(id)init NS_UNAVAILABLE;
 
 -(id)initWithLanguage:(NSArray<NSString *> *)subtitleLanguages
     withMinimumTextHeight:(float)minimumHeight

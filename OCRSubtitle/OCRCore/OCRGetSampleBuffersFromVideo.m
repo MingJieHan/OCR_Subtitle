@@ -22,6 +22,7 @@
 @synthesize duration;
 @synthesize timeRange;
 @synthesize ready;
+@synthesize videoSize;
 
 -(id)initWithVideoURL:(NSURL *)videoURL{
     return [[OCRGetSampleBuffersFromVideo alloc] initWithVideoURL:videoURL withBegin:0.f withEnd:99999999.f];
@@ -41,6 +42,9 @@
         // 将url对应的内容载入到url资产中
         AVURLAsset* inputAsset = [[AVURLAsset alloc] initWithURL:videoURL options:options];
         duration = inputAsset.duration;
+        
+        AVAssetTrack *videoTrack = [inputAsset tracksWithMediaType:AVMediaTypeVideo].firstObject;
+        videoSize = videoTrack.naturalSize;
         
         __weak typeof(self) weakSelf = self;
         [inputAsset loadValuesAsynchronouslyForKeys:[NSArray arrayWithObject:@"tracker"] completionHandler:^{
@@ -75,7 +79,6 @@
     }
     return sampleBufferRef;
 }
-
 
 - (void)processWithAsset:(AVAsset *)asset{
     NSError* error = nil;

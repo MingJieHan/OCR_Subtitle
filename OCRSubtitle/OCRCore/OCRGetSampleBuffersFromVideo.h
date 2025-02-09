@@ -10,10 +10,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 @interface OCRGetSampleBuffersFromVideo : NSObject
--(id)init NS_UNAVAILABLE;
 @property (nonatomic,readonly) CMTime duration;
 @property (nonatomic,readonly) CMTimeRange timeRange;
 @property (nonatomic,readonly) BOOL ready;
+@property (nonatomic,readonly) CGSize videoSize;
+-(id)init NS_UNAVAILABLE;
+
 -(id)initWithVideoURL:(NSURL *)videoURL;
 
 -(id)initWithVideoURL:(NSURL *)videoURL withBegin:(float)start withEnd:(float)end;

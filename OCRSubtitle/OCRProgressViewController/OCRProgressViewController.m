@@ -7,21 +7,54 @@
 
 #import "OCRProgressViewController.h"
 #import <HansServer/HansServer.h>
-
+#import "HansBorderLabel.h"
+#import "OCRScanningView.h"
 @interface OCRProgressViewController (){
     UIImageView *currentImageView;
+    UIImageView *resultImageView;
     HansProgressBarView *progressView;
     UILabel *titleLabel;
     NSDate *startDate;
     UILabel *usedTimeLabel;
     UILabel *requiredTimeLabel;
     UILabel *noticeLabel;
+    CGRect scanningRect;
+    
+    OCRScanningView *scanningView;
 }
 @end
 
 @implementation OCRProgressViewController
 @synthesize progress;
 @synthesize image;
+@synthesize gottedString;
+@synthesize gottedStringColor,gottedStringBorderColor,gottedStringBorderWidth;
+@synthesize passTopRate,heightRate;
+
+-(void)setGottedString:(NSString *)_gottedString{
+    if ([gottedString isEqualToString:_gottedString]){
+        return;
+    }
+    gottedString = _gottedString;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        HansBorderLabel *gottedStringLabel = [[HansBorderLabel alloc] initWithFrame:self->scanningRect];
+        gottedStringLabel.borderColor = self->gottedStringBorderColor;
+        gottedStringLabel.borderWidth = self->gottedStringBorderWidth;
+        gottedStringLabel.text = self->gottedString;
+        [UIView animateWithDuration:0.3 animations:^{
+            [self.view addSubview:gottedStringLabel];
+        } completion:^(BOOL finished) {
+            [UIView animateWithDuration:1.5 delay:0.3f options:UIViewAnimationOptionCurveLinear animations:^{
+                gottedStringLabel.transform = CGAffineTransformMakeScale(0.1, 0.1);
+                [gottedStringLabel setCenter:self->resultImageView.center];
+            } completion:^(BOOL finished) {
+                [gottedStringLabel removeFromSuperview];
+            }];
+        }];
+        return;
+    });
+    return;
+}
 
 -(void)setProgress:(float)_progress{
     if (progress == _progress){
@@ -55,6 +88,25 @@
     image = _image;
     dispatch_async(dispatch_get_main_queue(), ^{
         self->currentImageView.image = [[UIImage alloc] initWithCGImage:self->image];
+        float scaleWidth = self->currentImageView.image.size.width/self->currentImageView.frame.size.width;
+        float scaleHeight = self->currentImageView.image.size.height/self->currentImageView.frame.size.height;
+        float seekX = 0.f;
+        float seekY = 0.f;
+        if (scaleHeight < scaleWidth){
+            //横版
+            seekY = (self->currentImageView.frame.size.height - self->currentImageView.image.size.height / scaleWidth)/2.f;
+        }else{
+            //竖版
+            seekX = (self->currentImageView.frame.size.width - self->currentImageView.image.size.width / scaleHeight)/2.f;
+        }
+//        NSLog(@"seekX: %.2f", seekX);
+//        NSLog(@"seekY: %.2f", seekY);
+        CGRect rect = CGRectMake(seekX,
+                                 seekY + (self->currentImageView.frame.size.height - 2.f * seekY) * self->passTopRate,
+                                 self->currentImageView.frame.size.width - 2.f * seekX,
+                                 (self->currentImageView.frame.size.height - 2.f * seekY) * self->heightRate);
+        self->scanningRect = [self->currentImageView convertRect:rect toView:self.view];
+        [self->scanningView setFrame:self->scanningRect];
     });
     return;
 }
@@ -75,6 +127,7 @@
         currentImageView.layer.masksToBounds = YES;
         currentImageView.layer.cornerRadius = 8.f;
         currentImageView.contentMode = UIViewContentModeScaleAspectFit;
+        currentImageView.backgroundColor = [UIColor clearColor];
         [self.view addSubview:currentImageView];
         
         progressView = [[HansProgressBarView alloc] initWithFrame:CGRectMake(10.f, (self.view.frame.size.height-40.f)/2.f, self.view.frame.size.width-20.f, 40.f)];
@@ -110,6 +163,17 @@
         requiredTimeLabel.text = @"--:--";
         requiredTimeLabel.backgroundColor = [UIColor clearColor];
         [self.view addSubview:requiredTimeLabel];
+        
+        resultImageView = [[UIImageView alloc] initWithFrame:CGRectMake(10.f, self.view.frame.size.height-50.f, 40.f, 40.f)];
+        resultImageView.autoresizingMask = UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleRightMargin;
+        resultImageView.layer.masksToBounds = YES;
+        resultImageView.layer.cornerRadius = 2.f;
+        resultImageView.contentMode = UIViewContentModeScaleAspectFit;
+        resultImageView.backgroundColor = [UIColor blackColor];
+        [self.view addSubview:resultImageView];
+        
+        scanningView = [[OCRScanningView alloc] init];
+        [self.view addSubview:scanningView];
     }
     return self;
 }

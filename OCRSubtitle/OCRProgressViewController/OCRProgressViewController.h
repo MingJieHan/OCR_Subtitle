@@ -12,8 +12,15 @@ NS_ASSUME_NONNULL_BEGIN
 -(id)initWithCoder:(NSCoder *)coder NS_UNAVAILABLE;
 -(id)initWithNibName:(NSString * _Nullable )nibNameOrNil bundle:(NSBundle * _Nullable)nibBundleOrNil NS_UNAVAILABLE;
 
-
-@property (nonatomic) float progress;
+@property (nonatomic) float progress;   //float 0.f -> 1.f;
 @property (nonatomic) CGImageRef image;
+@property (nonatomic) NSString *gottedString;   //Animate string.
+
+@property (nonatomic) UIColor *gottedStringColor;
+@property (nonatomic) UIColor *gottedStringBorderColor;
+@property (nonatomic) float gottedStringBorderWidth;
+
+@property (nonatomic) float passTopRate;
+@property (nonatomic) float heightRate;
 @end
 NS_ASSUME_NONNULL_END

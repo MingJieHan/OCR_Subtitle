@@ -40,7 +40,9 @@ NS_ASSUME_NONNULL_BEGIN
 -(float)distanceWith:(OCRSegment *)otherSegment;
 -(float)sourceDistanceWith:(OCRSegment *)otherSegment;
 
--(void)buildObservationWithCGImage:(CGImageRef)subtitleCGImage withSource:(CGImageRef)subtitleSourceCGImage;
+-(void)buildObservationWithCGImage:(CGImageRef)subtitleCGImage
+                        withSource:(CGImageRef)subtitleSourceCGImage
+                         saveDebug:(BOOL)savePNGFile;
 +(void)clearImages;
 
 #pragma mark - Archiver
