@@ -8,6 +8,7 @@
 #import "OCRSubtitleManage.h"
 #import "OCRHistory.h"
 #import "OCRSetting.h"
+#import "OCRGetTextFromImage.h"
 
 #define ENTITY_NAME_HISTORY_DATA @"OCRHistory"
 #define ENTITY_NAME_SETTING_DATA @"OCRSetting"
@@ -94,9 +95,11 @@ static OCRSubtitleManage *staticOCRSubtitleManage;
     [fetchRequest setEntity:entity];
     [fetchRequest setReturnsObjectsAsFaults:NO];
     
-//    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"completedDate" ascending:NO];
-//    NSArray *sortDescriptors = [NSArray arrayWithObjects:sortDescriptor, nil];
-//    [fetchRequest setSortDescriptors:sortDescriptors];
+    NSSortDescriptor *sortDescriptor2 = [[NSSortDescriptor alloc] initWithKey:@"useDate" ascending:NO];
+    NSSortDescriptor *sortDescriptor1 = [[NSSortDescriptor alloc] initWithKey:@"modifieDate" ascending:NO];
+    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"createDate" ascending:NO];
+    NSArray *sortDescriptors = [NSArray arrayWithObjects:sortDescriptor2,sortDescriptor1,sortDescriptor, nil];
+    [fetchRequest setSortDescriptors:sortDescriptors];
     
 //    NSPredicate *p = [NSPredicate predicateWithFormat:@"(book == %@ AND chapter=%ld AND section >= %ld AND section <= %ld)", bookName, chapter, fromSection, toSection];
 //    [fetchRequest setPredicate:p];
@@ -121,10 +124,17 @@ static OCRSubtitleManage *staticOCRSubtitleManage;
 -(OCRSetting *)createOCRSetting{
     NSEntityDescription *entity = [NSEntityDescription entityForName:ENTITY_NAME_SETTING_DATA inManagedObjectContext:managedObjectContext];
     OCRSetting *result = [[OCRSetting alloc] initWithEntity:entity insertIntoManagedObjectContext:managedObjectContext];
+    result.createDate = NSDate.date;
+    result.rate = 5;
     return result;
 }
 
 -(BOOL)save{
     return [managedObjectContext save:nil];;
+}
+
+-(BOOL)removeItem:(NSManagedObject *)item{
+    [managedObjectContext deleteObject:item];
+    return [self save];
 }
 @end

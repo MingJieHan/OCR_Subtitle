@@ -11,7 +11,6 @@
 
 #define MAXIMUM_IMAGE_SIZE 1920
 @interface OCRImagePreprocessing(){
-    CGSize imageSize;
     unsigned char *rawData;
     unsigned short **map;
     NSMutableArray *waitingSpreadPoints;
@@ -42,6 +41,7 @@
 
 @implementation OCRImagePreprocessing
 @synthesize regionOfInterest;
+@synthesize imageSize;
 
 +(CGImageRef)createBlackOrWhite:(CGImageRef)image withGate:(NSUInteger)gate{
     if (nil == image){

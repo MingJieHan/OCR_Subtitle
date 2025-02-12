@@ -21,13 +21,18 @@
     self = [super init];
     if (self){
         if (nil == videoURL){
+            NSLog(@"OCRGetImageFromVideo initWithVideoURL: videoURL is nil.");
             return nil;
         }
         ass = [AVAsset assetWithURL:videoURL];
         if (nil == ass){
+            NSLog(@"OCRGetImageFromVideo AVAsset video failed.");
             return nil;
         }
-        
+        if (0 == ass.duration.value){
+            NSLog(@"OCRGetImageFromVideo AVAsset video duration is 0, it is may without AccessingSecurityScopedResource");
+            return nil;
+        }
         generator = [[AVAssetImageGenerator alloc] initWithAsset:ass];
         if (nil == generator){
             return nil;

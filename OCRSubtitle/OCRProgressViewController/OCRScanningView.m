@@ -36,14 +36,14 @@
 -(void)animated{
     float duration = 2.13f;
     float space = 0.1f;
-    [UIView animateWithDuration:duration delay:0.f options:UIViewAnimationOptionCurveEaseInOut animations:^{
+    [UIView animateWithDuration:duration delay:0.f options:UIViewAnimationOptionCurveLinear animations:^{
         [self->lineView setFrame:CGRectMake(self.frame.size.width, 0.f,
                                             self->lineView.frame.size.width,
                                             self->lineView.frame.size.height)];
     } completion:^(BOOL finished) {
         
     }];
-    [UIView animateWithDuration:duration delay:duration+space options:UIViewAnimationOptionCurveEaseInOut animations:^{
+    [UIView animateWithDuration:duration delay:duration+space options:UIViewAnimationOptionCurveLinear animations:^{
         [self->lineView setFrame:CGRectMake(0.f, 0.f,
                                             self->lineView.frame.size.width,
                                             self->lineView.frame.size.height)];

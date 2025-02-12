@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24D60" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24D70" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
     <entity name="OCRHistory" representedClassName="OCRHistory" syncable="YES">
         <attribute name="completedDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="file" optional="YES" attributeType="String"/>
@@ -10,12 +10,17 @@
     </entity>
     <entity name="OCRSetting" representedClassName="OCRSetting" syncable="YES">
         <attribute name="borderColorString" optional="YES" attributeType="String"/>
+        <attribute name="createDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="heightRate" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="imageData" optional="YES" attributeType="Binary"/>
+        <attribute name="modifieDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="note" optional="YES" attributeType="String"/>
         <attribute name="passTopRate" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="rate" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="subtitleLanguageString" optional="YES" attributeType="String"/>
         <attribute name="textColorString" optional="YES" attributeType="String"/>
+        <attribute name="useDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="videoHeight" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="videoWidth" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
     </entity>

@@ -10,6 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 @interface OCRImagePreprocessing : NSObject
+@property (nonatomic) CGSize imageSize;
 -(id)init;
 
 -(id)initWithRegionOfInterest:(CGRect)interestRect;

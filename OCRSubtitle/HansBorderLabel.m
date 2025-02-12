@@ -30,6 +30,7 @@
     }
     return self;
 }
+
 - (void)drawTextInRect:(CGRect)rect {
     CGSize shadowOffset = self.shadowOffset;
     UIColor *textColor = self.textColor;
@@ -49,4 +50,21 @@
       self.shadowOffset = shadowOffset;
 }
 
+-(void)setBorderColor:(UIColor *)_borderColor{
+    if (nil == _borderColor){
+        borderColor = [UIColor clearColor];
+    }else{
+        borderColor = _borderColor;
+    }
+    return;
+}
+
+-(void)setTextColor:(UIColor *)_textColor{
+    if (nil == _textColor){
+        [super setTextColor:[UIColor clearColor]];
+    }else{
+        [super setTextColor:_textColor];
+    }
+    return;
+}
 @end

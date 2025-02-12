@@ -22,5 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
 -(OCRSetting *)createOCRSetting;
 
 -(BOOL)save;
+-(BOOL)removeItem:(NSManagedObject *)item;
 @end
 NS_ASSUME_NONNULL_END

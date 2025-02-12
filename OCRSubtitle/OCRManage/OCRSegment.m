@@ -126,8 +126,12 @@
             [UIImagePNGRepresentation(im) writeToFile:subtitleImageFile atomically:YES];
         }
     }
+    if (subtitleCGImage){
+        predImageObservation = [self observeWithImage:subtitleCGImage];
+    }else{
+        predImageObservation = nil;
+    }
     
-    predImageObservation = [self observeWithImage:subtitleCGImage];
     if (savePNGFile){
         NSString *name = [[NSString alloc] initWithFormat:@"%@_source.png", string];
         subtitleSourceImageFile = [file stringByAppendingPathComponent:name];

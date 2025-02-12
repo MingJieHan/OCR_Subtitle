@@ -14,11 +14,15 @@
     UILabel *rateLabel;
     HansBorderLabel *fontLabel;
     UIView *scanView;
+    UIButton *infoButton;
+    UIButton *removeButton;
 }
 @end
 
 @implementation OCRTemplateCell
 @synthesize item;
+@synthesize moreHandler;
+@synthesize removeHandler;
 
 -(void)checkItem{
     if (nil == backImageView){
@@ -48,6 +52,31 @@
         fontLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:24.f];
         fontLabel.text = @"字幕样本";
         [self addSubview:fontLabel];
+        
+        infoButton = [UIButton buttonWithType:UIButtonTypeInfoLight];
+        [infoButton setFrame:CGRectMake(self.frame.size.width-40.f, 0.f, 40.f, 40.f)];
+        infoButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+        [infoButton addTarget:self action:@selector(infoButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:infoButton];
+        
+        removeButton = [[UIButton alloc] initWithFrame:CGRectMake(self.frame.size.width-40.f, 60.f, 40.f, 40.f)];
+        removeButton.backgroundColor = [UIColor blueColor];
+        removeButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleBottomMargin;
+        [removeButton addTarget:self action:@selector(removeButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:removeButton];
+    }
+    return;
+}
+
+-(void)removeButtonAction{
+    if (removeHandler){
+        removeHandler(self);
+    }
+    return;
+}
+-(void)infoButtonAction{
+    if (moreHandler){
+        moreHandler(self);
     }
     return;
 }
@@ -59,7 +88,7 @@
     item = _item;
     [self checkItem];
     backImageView.image = item.image;
-    sizeLabel.text = [NSString stringWithFormat:@"%.0lu x %.0lu", (unsigned long)item.videoWidth, (unsigned long)item.videoHeight];
+    sizeLabel.text = [NSString stringWithFormat:@"Dimensions: %d x %d", [item.videoWidth intValue] , [item.videoHeight intValue]];
     languageLabel.text = [item languageString];
     [scanView setFrame:CGRectMake(0.f, item.passTopRate * backImageView.frame.size.height, backImageView.frame.size.width, item.heightRate * self.frame.size.height)];
     

@@ -29,23 +29,7 @@ static NSString * const reuseIdentifier = @"OCRHistoryIdentifier";
     collectionFlowLayout.scrollDirection = UICollectionViewScrollDirectionVertical;
     self = [super initWithFrame:frame collectionViewLayout:collectionFlowLayout];
     if (self){
-        historys = [OCRSubtitleManage.shared existHistorys];        
-        
-//        historys = [[NSMutableArray alloc] init];
-//        NSString *path = [NSHomeDirectory() stringByAppendingString:@"/Documents/"];
-//        NSArray *files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:path error:nil];
-//        
-//        for (NSString *file in files){
-//            if (![[[file pathExtension] lowercaseString] isEqualToString:@"txt"]){
-//                continue;
-//            }
-//            OCRHistory *item = [[OCRHistory alloc] init];
-//            item.file = [path stringByAppendingPathComponent:file];
-//            NSDictionary *dict = [NSFileManager.defaultManager attributesOfItemAtPath:item.file error:nil];
-//            item.completedDate = [dict valueForKey:NSFileModificationDate];
-//            item.usageSeconds = 45.3f;
-//            [historys addObject:item];
-//        }
+        historys = [OCRSubtitleManage.shared existHistorys];
         self.dataSource = self;
         self.delegate = self;
         [self registerClass:[OCRHistoryCell class] forCellWithReuseIdentifier:reuseIdentifier];
@@ -93,8 +77,10 @@ static NSString * const reuseIdentifier = @"OCRHistoryIdentifier";
 
 -(void)addObject:(OCRHistory *)anOCRHistory{
     [self performBatchUpdates:^{
-        NSIndexPath *index = [NSIndexPath indexPathForRow:0 inSection:0];
         [historys insertObject:anOCRHistory atIndex:0];
+        
+        //The first cell is Add
+        NSIndexPath *index = [NSIndexPath indexPathForRow:1 inSection:0];
         [self insertItemsAtIndexPaths:@[index]];
     } completion:^(BOOL finished) {
         
@@ -106,10 +92,10 @@ static NSString * const reuseIdentifier = @"OCRHistoryIdentifier";
     [self performBatchUpdates:^{
         NSInteger nn = [self->historys indexOfObject:anOCRHistory];
         [self->historys removeObject:anOCRHistory];
-        NSIndexPath *index = [NSIndexPath indexPathForRow:nn inSection:0];
+        NSIndexPath *index = [NSIndexPath indexPathForRow:nn+1 inSection:0];
         [self deleteItemsAtIndexPaths:@[index]];
     } completion:^(BOOL finished) {
-        
+        [OCRSubtitleManage.shared removeItem:anOCRHistory];
     }];
     return;
 }
@@ -120,12 +106,17 @@ static NSString * const reuseIdentifier = @"OCRHistoryIdentifier";
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-    return historys.count;
+    return 1 + historys.count;
 }
 
 - (OCRHistoryCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     OCRHistoryCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:reuseIdentifier forIndexPath:indexPath];
-    cell.item = [historys objectAtIndex:indexPath.row];
+    if (0 == indexPath.row){
+        //new history
+        cell.item = nil;
+    }else{
+        cell.item = [historys objectAtIndex:indexPath.row-1];
+    }
     cell.moreHandler = ^(OCRHistoryCell * _Nonnull cell) {
         [self moreButtonAction:cell];
     };

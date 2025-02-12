@@ -32,7 +32,6 @@
 -(void)checkItems{
     if (nil == nameLabel){
         self.backgroundColor = [UIColor clearColor];
-        
         bView = [[UIImageView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.frame.size.width, self.frame.size.height)];
         bView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
         bView.layer.cornerRadius = 3.f;
@@ -75,14 +74,24 @@
 -(void)setItem:(OCRHistory *)_item{
     item = _item;
     [self checkItems];
-    if (item.thumbnailImageData){
-        bView.image = [[UIImage alloc] initWithData:item.thumbnailImageData];
-    }else{
+
+    if (nil == item){
         bView.image = nil;
+        shareButton.alpha = 0.f;
+        nameLabel.text = @"+ New Subtitle";
+        completedLabel.text = @"";
+        usageLabel.text = @"";
+    }else{
+        if (item.thumbnailImageData){
+            bView.image = [[UIImage alloc] initWithData:item.thumbnailImageData];
+        }else{
+            bView.image = nil;
+        }
+        shareButton.alpha = 1.f;
+        nameLabel.text = [item.file lastPathComponent];
+        completedLabel.text = [NSString stringWithFormat:@"OCR At:%@",item.completedDate];
+        usageLabel.text = [NSString stringWithFormat:@"Usage: %.0f sec", item.usageSeconds];
     }
-    nameLabel.text = [item.file lastPathComponent];
-    completedLabel.text = [NSString stringWithFormat:@"OCR At:%@",item.completedDate];
-    usageLabel.text = [NSString stringWithFormat:@"Usage: %.0f sec", item.usageSeconds];
     return;
 }
 @end

@@ -8,9 +8,8 @@
 #import <UIKit/UIKit.h>
 #import "OCRHistory.h"
 
-typedef void (^OCRHistoryCollectionView_OpenAction) (OCRHistory * _Nonnull history);
+typedef void (^OCRHistoryCollectionView_OpenAction) (OCRHistory * _Nullable history);
 typedef void (^OCRHistoryCollectionView_ShareAction) (OCRHistory * _Nonnull history);
-
 
 NS_ASSUME_NONNULL_BEGIN
 @interface OCRHistoryCollectionView : UICollectionView

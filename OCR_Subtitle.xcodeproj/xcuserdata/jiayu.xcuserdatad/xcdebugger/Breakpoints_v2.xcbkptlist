@@ -243,32 +243,64 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "8B678145-F810-4472-B659-DE9241104831"
+            uuid = "285353EF-5633-485E-A063-D86E600F4EE3"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "OCRSubtitle/ViewController.m"
+            filePath = "OCRSubtitle/OCRCore/OCRImagePreprocessing.m"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "177"
-            endingLineNumber = "177"
-            landmarkName = "-editSetting:"
+            startingLineNumber = "428"
+            endingLineNumber = "428"
+            landmarkName = "-createRegionOfInterestImageFromFullImage:"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "63E5CB06-2317-4EA4-A374-9179AAE2D491"
+            uuid = "22CAA119-2ED2-4916-AC4D-7F3D6B0DD00E"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "OCRSubtitle/OCRSettings/TemplateDetails/OCRTemplateTableViewController.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "86"
+            endingLineNumber = "86"
+            landmarkName = "-colorPickerViewControllerDidFinish:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "0B5752B0-1126-459A-83C9-4C9CD75B87AE"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "OCRSubtitle/ViewController.m"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "207"
-            endingLineNumber = "207"
-            landmarkName = "-OCRSampleInThread:threadNum:"
+            startingLineNumber = "114"
+            endingLineNumber = "114"
+            landmarkName = "-preViewFile:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "83821A91-1718-4DD9-80BA-3AC79F379BEB"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "OCRSubtitle/ViewController.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "405"
+            endingLineNumber = "405"
+            landmarkName = "-exceptStopWithErrorString:"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

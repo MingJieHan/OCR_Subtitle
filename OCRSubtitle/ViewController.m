@@ -18,15 +18,15 @@
 #import "OCRTemplateCollectionView.h"
 #import "OCRHistoryCollectionView.h"
 #import "OCRSubtitleManage.h"
+#import "OCRAreaSelectViewController.h"
+#import "OCRTemplateTableViewController.h"
 
 #define MAXIMUM_THREAD 4    //How many thread for get Text from image.
 
 @interface ViewController ()<UIDocumentPickerDelegate,UIDocumentBrowserViewControllerDelegate>{
-    UIHansButton *debugButton;
     NSDate *startDate;
     NSURL *videoURL;
     OCRProgressViewController *progressVC;
-    
     
     NSMutableArray <NSNumber *>*debugGetImagesFromVideo;  //从视频中提取图片， 值是 提取图片的时间值,单位ms
     NSMutableArray <NSThread *> *threads;
@@ -43,6 +43,8 @@
     OCRHistoryCollectionView *historyView;
     UILabel *verLabel;
     UIImage *thumbnailCGImage;
+    
+    NSArray <OCRSetting *>*availableTemplatesForTheVideo;
 }
 
 @end
@@ -54,18 +56,6 @@
     NSLog(@"Home:%@", NSHomeDirectory());
     progressVC = [[OCRProgressViewController alloc] init];
     
-    debugButton = [[UIHansButton alloc] initWithFrame:CGRectMake( 0.f,self.view.frame.size.height-50.f, 200.f, 50.f)];
-    debugButton.enabled = YES;
-    debugButton.autoresizingMask = UIViewAutoresizingFlexibleRightMargin|UIViewAutoresizingFlexibleTopMargin;
-    UIImage *image = [[UIImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"files" ofType:@"png"]];
-    [debugButton setImage:image forState:UIControlStateNormal];
-    [debugButton setTitle:NSLocalizedString(@"Debug", nil)
-                      forState:UIControlStateNormal];
-    [debugButton addTarget:self action:@selector(debugAction) forControlEvents:UIControlEventTouchUpInside];
-    [debugButton setBackgroundColor:[UIHans blue] forState:UIControlStateNormal];
-    [debugButton setBackgroundColor:[UIHans blueHighlighted] forState:UIControlStateHighlighted];
-    [self.view addSubview:debugButton];
-    
     ViewController * __strong strongSelf = self;
     float y = 400.f;
     templateView = [[OCRTemplateCollectionView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.view.frame.size.width, y)];
@@ -75,7 +65,7 @@
         [strongSelf selectFileAction];
     };
     templateView.editHandler = ^(OCRSetting * _Nonnull selectedSetting) {
-        [strongSelf editSetting:selectedSetting];
+        [strongSelf showTemplateDetailWithSetting:selectedSetting];
     };
     [self.view addSubview:templateView];
     
@@ -86,10 +76,17 @@
         [strongSelf moreActionWith:history];
     };
     historyView.openHandler = ^(OCRHistory * _Nonnull history) {
-        [strongSelf openFile:history.file];
+        if (nil == history){
+            self->setting = nil;
+            [strongSelf selectFileAction];
+        }else{
+            NSString *fullPathFile = [history reWriteSRTInfo];
+            if (fullPathFile){
+                [strongSelf preViewFile:fullPathFile];
+            }
+        }
     };
     [self.view addSubview:historyView];
-    
     
     verLabel = [[UILabel alloc] initWithFrame:CGRectMake(0.f, self.view.frame.size.height-40.f, self.view.frame.size.width, 30.f)];
     verLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin;
@@ -98,24 +95,25 @@
     verLabel.text = [NSString stringWithFormat:@"OCR Subtitle ver:%@ buile:%@", UIHans.appVersion, UIHans.appBuildVersion];
     [self.view addSubview:verLabel];
     
-    y = CGRectGetMaxY(debugButton.frame)+20.f;
-    UILabel *l = [[UILabel alloc] initWithFrame:CGRectMake(10.f, y, self.view.frame.size.width-20.f, self.view.frame.size.height-y-40.f)];
-    l.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-    l.numberOfLines = 10;
-    l.text = @"字幕文字颜色纯白、黑色边框不少于 “60”， 字体大小不可变、字幕居中、所在上下位置不动、不可用渐入渐出特效。";
+//    y = CGRectGetMaxY(debugButton.frame)+20.f;
+//    UILabel *l = [[UILabel alloc] initWithFrame:CGRectMake(10.f, y, self.view.frame.size.width-20.f, self.view.frame.size.height-y-40.f)];
+//    l.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
+//    l.numberOfLines = 10;
+//    l.text = @"字幕文字颜色纯白、黑色边框不少于 “60”， 字体大小不可变、字幕居中、所在上下位置不动、不可用渐入渐出特效。";
 //    [self.view addSubview:l];
 
-    NSArray *languages = [OCRGetTextFromImage sortedAvailableLanguages];
-    for (NSString *descriptString in languages){
-        NSLog(@"%@", descriptString);
-    }
+//    NSArray *languages = [OCRGetTextFromImage sortedAvailableLanguages];
+//    for (NSString *descriptString in languages){
+//        NSLog(@"%@", descriptString);
+//    }
 }
 
--(void)openFile:(NSString *)file{
-    NSURL *url = [NSURL fileURLWithPath:file];
-    UIDocumentInteractionController *c = [UIDocumentInteractionController interactionControllerWithURL:url];
-    c.delegate = UIHans.defaultUIHans;
-    BOOL opend = [c presentPreviewAnimated:YES];
+-(void)preViewFile:(NSString *)file{
+    if (NO == [NSFileManager.defaultManager fileExistsAtPath:file]){
+        NSLog(@"File:%@ NOT FOUND.", file);
+        return;
+    }
+    [UIHans alertPreviewWithURL:[NSURL fileURLWithPath:file]];
     return;
 }
 
@@ -173,12 +171,7 @@
     return;
 }
 
--(void)editSetting:(OCRSetting *)editSetting{
-    return;
-}
-
--(void)pickupURLs:(NSArray <NSURL *>*)urls{
-    videoURL = urls.firstObject;
+-(void)beginGotTextWorking{
     [self presentViewController:progressVC animated:NO completion:^{
         self->progressVC.gottedStringBorderColor = self->setting.borderColor;
         self->progressVC.gottedStringBorderWidth = 3.f;
@@ -186,40 +179,81 @@
         self->progressVC.heightRate = self->setting.heightRate;
         [self startWork];
     }];
+}
+
+-(void)pickupURLs:(NSArray <NSURL *>*)urls{
+    videoURL = urls.firstObject;
+    if (nil != setting){
+        //从模版位置点击进来，有选择的模版。
+        [self beginGotTextWorking];
+        return;
+    }
+    
+    availableTemplatesForTheVideo = [templateView availableSettingForVideo:videoURL];
+    if (nil == availableTemplatesForTheVideo || 0 == availableTemplatesForTheVideo.count){
+        UIAlertController *v = [UIAlertController alertControllerWithTitle:@"NOT FOUND!" message:@"Not found availabel template for this video." preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertAction *create = [UIAlertAction actionWithTitle:@"Create Template" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+            [self createTemplateWithVideo:self->videoURL];
+        }];
+        [v addAction:create];
+        UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil];
+        [v addAction:cancel];
+        [self presentViewController:v animated:YES completion:nil];
+        return;
+    }
+    
+    //发现了可用的模版，可以选择某个模版执行，也可创建新的，或者取消
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"How to" message:@"" preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *create = [UIAlertAction actionWithTitle:@"New Template" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        [self createTemplateWithVideo:self->videoURL];
+        return;
+    }];
+    [alert addAction:create];
+    for (OCRSetting *s in availableTemplatesForTheVideo){
+        UIAlertAction *action = [UIAlertAction actionWithTitle:s.name style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            for (OCRSetting *tt in self->availableTemplatesForTheVideo){
+                if ([tt.name isEqualToString:action.title]){
+                    self->setting = tt;
+                    [self beginGotTextWorking];
+                    break;
+                }
+            }
+        }];
+        [alert addAction:action];
+    }
+    UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil];
+    [alert addAction:cancel];
+    [self presentViewController:alert animated:YES completion:nil];
     return;
 }
 
 -(void)OCRSampleInThread:(SampleObject *)sample threadNum:(int)threadIndex{
     CGImageRef sourceCGImage = [sample createCGImage];
-    CGImageRef predImage = [[imagePre objectAtIndex:threadIndex] createSpreadCGImageFrom:sourceCGImage
+    OCRImagePreprocessing *imageWorker = [imagePre objectAtIndex:threadIndex];
+    
+    CGImageRef predImage = nil;
+    
+    if (setting.textColor && setting.borderColor){
+        predImage = [imageWorker createSpreadCGImageFrom:sourceCGImage
                                         textColor:setting.textColor
                                     textTolerances:0.1f
                                         boardColor:setting.borderColor
                                     boardTolerances:0.2f];
-    CGImageRef subtitleSourceImage = [[imagePre objectAtIndex:threadIndex] createRegionOfInterestImageFromFullImage:sourceCGImage];
+    }else{
+        imageWorker.imageSize = CGSizeMake([setting.videoWidth integerValue], [setting.videoHeight integerValue]);
+    }
+    
+    CGImageRef subtitleSourceImage = nil;
+    subtitleSourceImage = [imageWorker createRegionOfInterestImageFromFullImage:sourceCGImage];
     if (nil == subtitleSourceImage){
         NSLog(@"Stop debug.");
         return;
     }
-    CGImageRef subtitleImage = [[imagePre objectAtIndex:threadIndex] createRegionOfInterestImageFromFullImage:predImage];
-    if (nil == subtitleImage){
-        NSLog(@"Stop debug.");
-        return;
+    
+    CGImageRef subtitleImage = nil;
+    if (predImage){
+        subtitleImage = [imageWorker createRegionOfInterestImageFromFullImage:predImage];
     }
-//    VNFeaturePrintObservation *obs = [[imagePre objectAtIndex:threadIndex] observationWithCGImage:subtitleImage];
-//    if (nil == lastObservation){
-//        lastObservation = obs;
-//    }else{
-//        float distance = 1.f;
-//        NSError *error = nil;
-//        BOOL success = [lastObservation computeDistance:&distance toFeaturePrintObservation:obs error:&error];
-//        if (distance > 0.35){
-//            NSLog(@"与前不同 :%.5f", distance);
-//        }else{
-//            NSLog(@"与前相同 :%.5f", distance);
-//        }
-//        lastObservation = obs;
-//    }
     
 // 重载入测试开始
 //    UIImage *i = [[UIImage alloc] initWithCGImage:subtitleSourceImage];
@@ -230,7 +264,11 @@
 //重载入测试结束
     progressVC.image = sourceCGImage;
     
-    [[textFromImage objectAtIndex:threadIndex] OCRImage:predImage
+    CGImageRef scanImage = predImage;
+    if (nil == scanImage){
+        scanImage = sourceCGImage;
+    }
+    [[textFromImage objectAtIndex:threadIndex] OCRImage:scanImage
                                           withImageTime:[sample imageTime]
                                                 handler:^(NSArray<OCRSegment *> * _Nonnull results) {
         for (OCRSegment *seg in results){
@@ -253,7 +291,9 @@
 //                NSLog(@"Debug text");
 //            }
             self->thumbnailCGImage = [[UIImage alloc] initWithCGImage:sourceCGImage];
-            [OCRManageSegment.shared add:seg withSubtitleImage:subtitleImage withSource:subtitleSourceImage];
+            [OCRManageSegment.shared add:seg
+                       withSubtitleImage:subtitleImage
+                              withSource:subtitleSourceImage];
         }
         float progress = [sample imageTime]/(self->bufferFromVideo.duration.value/self->bufferFromVideo.duration.timescale);
         self->progressVC.progress = progress;
@@ -322,11 +362,54 @@
     return;
 }
 
+-(void)showTemplateDetailWithSetting:(OCRSetting *)setting{
+    OCRTemplateTableViewController *ttVc = [[OCRTemplateTableViewController alloc] initWithSetting:setting];
+    ttVc.changedHandler = ^(OCRTemplateTableViewController * _Nonnull vc) {
+        [self->templateView refreshSetting:vc.setting];
+        return;
+    };
+    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:ttVc];
+    nav.modalPresentationStyle = UIModalPresentationFullScreen;
+    [self presentViewController:nav animated:YES completion:nil];
+}
+
+-(void)createTemplateWithVideo:(NSURL *)targetVideoURL{
+    OCRAreaSelectViewController *v = [[OCRAreaSelectViewController alloc] initWithVideo:targetVideoURL];
+    v.modalPresentationStyle = UIModalPresentationFullScreen;
+    v.handler = ^(OCRAreaSelectViewController * _Nonnull vc) {
+        OCRSetting *newSetting = [OCRSubtitleManage.shared createOCRSetting];
+        newSetting.name = vc.suggestName;
+        newSetting.image = vc.thumbnailImage;
+        newSetting.videoWidth = [NSNumber numberWithFloat:vc.videoSize.width];
+        newSetting.videoHeight = [NSNumber numberWithFloat:vc.videoSize.height];
+        newSetting.passTopRate = vc.passTopRate;
+        newSetting.heightRate = vc.heightRate;
+        newSetting.subtitleLanguages = @[vc.scaningLanguageIdentifier];
+        [newSetting save];
+        
+        [self->templateView reloadData];
+        
+        [self showTemplateDetailWithSetting:newSetting];
+    };
+    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:v];
+    nav.modalPresentationStyle = UIModalPresentationFullScreen;
+    [self presentViewController:nav animated:YES completion:nil];
+    return;
+}
+
 -(void)exceptStopWithErrorString:(NSString *)string{
     [progressVC dismissViewControllerAnimated:YES completion:^{
         [self->videoURL stopAccessingSecurityScopedResource];
         [UIApplication.sharedApplication setIdleTimerDisabled:NO];
-        [UIHans alertTitle:@"Error" withMessage:string];
+        
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Error" message:string preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertAction *create = [UIAlertAction actionWithTitle:@"Create Template" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+            [self createTemplateWithVideo:self->videoURL];
+        }];
+        [alert addAction:create];
+        UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil];
+        [alert addAction:cancel];
+        [self presentViewController:alert animated:YES completion:nil];
     }];
     return;
 }
@@ -340,17 +423,22 @@
     
     startDate = NSDate.date;
     bufferFromVideo = [[OCRGetSampleBuffersFromVideo alloc] initWithVideoURL:videoURL];
-    if (bufferFromVideo.videoSize.width != setting.videoWidth || bufferFromVideo.videoSize.height != setting.videoHeight){
+    if (bufferFromVideo.videoSize.width != [setting.videoWidth floatValue]
+        || bufferFromVideo.videoSize.height != [setting.videoHeight floatValue]){
         //Warning for different size with setting.
         float vRate = bufferFromVideo.videoSize.width/bufferFromVideo.videoSize.height;
-        float sRate = (float)setting.videoWidth/(float)setting.videoHeight;
+        float sRate = [setting.videoWidth floatValue]/[setting.videoHeight floatValue];
         NSString *errorString = nil;
         if (vRate == sRate){
             //视频宽高比例相同
         }else{
             //视频宽高比例不同
         }
-        errorString = [NSString stringWithFormat:@"Template size is %ld x %ld, but video size is %.0f x %.0f", setting.videoWidth, setting.videoHeight, bufferFromVideo.videoSize.width, bufferFromVideo.videoSize.height];
+        errorString = [NSString stringWithFormat:@"Template size is %ld x %ld, but video size is %.0f x %.0f",
+                       [setting.videoWidth longValue],
+                       [setting.videoHeight longValue],
+                       bufferFromVideo.videoSize.width,
+                       bufferFromVideo.videoSize.height];
         [self exceptStopWithErrorString:errorString];
         return;
     }
@@ -416,22 +504,6 @@
     return;
 }
 
--(void)debugAction{
-    OCRHistory *item = [OCRSubtitleManage.shared createOCRResult];
-    item.file = @"test";
-    item.videoFileName = @"name";
-    item.srtInfo = @"info";
-    item.completedDate = NSDate.date;
-    item.usageSeconds = [NSDate.date timeIntervalSinceDate:startDate];
-    item.thumbnailImageData = nil;
-    item.sampleRate = 10;
-    item.languageString = @"zh-Hans";
-    [item save];
-    
-    [historyView addObject:item];
-    return;
-}
-
 -(void)makeSRT{
     [OCRManageSegment.shared filterWithTail:@[@"）"]];
     
@@ -439,30 +511,41 @@
     if (nil == name){
         name = @"Debug";
     }
-    NSDateFormatter *df = [[NSDateFormatter alloc] init];
-    [df setLocale:NSLocale.currentLocale];
-    [df setTimeZone:NSTimeZone.systemTimeZone];
-    [df setDateFormat:@"yyyyMMdd_HHmmss"];
-    NSString *file = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/%@_%@.srt.txt", [df stringFromDate:NSDate.date], name];
+    NSString *file = [[NSString alloc] initWithFormat:@"%@.srt.txt", name];
+//    NSDateFormatter *df = [[NSDateFormatter alloc] init];
+//    [df setLocale:NSLocale.currentLocale];
+//    [df setTimeZone:NSTimeZone.systemTimeZone];
+//    [df setDateFormat:@"yyyyMMdd_HHmmss"];
+//    NSString *file = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/%@_%@.srt.txt", [df stringFromDate:NSDate.date], name];
     
-    [OCRManageSegment.shared makeSRT:file withTolerance:[setting tolerance]];
+    NSString *fullPathFile = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/%@", file];
+    if ([NSFileManager.defaultManager fileExistsAtPath:fullPathFile]){
+        [NSFileManager.defaultManager removeItemAtPath:fullPathFile error:nil];
+    }
+    [OCRManageSegment.shared makeSRT:fullPathFile withTolerance:[setting tolerance]];
     
-
     OCRHistory *item = [OCRSubtitleManage.shared createOCRResult];
     item.file = file;
     item.videoFileName = name;
-    item.srtInfo = [[NSString alloc] initWithContentsOfFile:file encoding:NSUTF8StringEncoding error:nil];
+    NSError *error = nil;
+    item.srtInfo = [[NSString alloc] initWithContentsOfFile:fullPathFile encoding:NSUTF8StringEncoding error:&error];
+    if (error){
+        NSLog(@"write SRT result failed:%@", error.localizedDescription);
+    }
     item.completedDate = NSDate.date;
     item.usageSeconds = [NSDate.date timeIntervalSinceDate:startDate];
     item.thumbnailImageData = UIImageJPEGRepresentation(thumbnailCGImage, 0.7);
     item.sampleRate = setting.rate;
-    item.languageString = setting.languageString;
+    item.languageString = [setting languageString];
     [item save];
-    
     [historyView addObject:item];
-    
-    [UIHans shareFile:file];
-    
+    if (setting){
+        setting.useDate = NSDate.date;
+        [setting save];
+        [templateView scrollsToTop];
+        [templateView reloadData];
+    }
+    [UIHans shareFile:fullPathFile];
 }
 
 #pragma mark - UIDocumentPickerDelegate
@@ -600,4 +683,19 @@
     }
 }
 
+-(void)debugAction{
+    OCRHistory *item = [OCRSubtitleManage.shared createOCRResult];
+    item.file = @"test";
+    item.videoFileName = @"name";
+    item.srtInfo = @"info";
+    item.completedDate = NSDate.date;
+    item.usageSeconds = [NSDate.date timeIntervalSinceDate:startDate];
+    item.thumbnailImageData = nil;
+    item.sampleRate = 10;
+    item.languageString = @"zh-Hans";
+    [item save];
+    
+    [historyView addObject:item];
+    return;
+}
 @end

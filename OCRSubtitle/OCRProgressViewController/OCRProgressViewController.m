@@ -132,6 +132,7 @@
         
         progressView = [[HansProgressBarView alloc] initWithFrame:CGRectMake(10.f, (self.view.frame.size.height-40.f)/2.f, self.view.frame.size.width-20.f, 40.f)];
         progressView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleBottomMargin;
+        progressView.backgroundColor = [UIColor redColor];
         [self.view addSubview:progressView];
         
         noticeLabel = [[UILabel alloc] initWithFrame:CGRectMake(10.f, self.view.frame.size.height-60.f, self.view.frame.size.width-20.f, 40.f)];
@@ -149,7 +150,6 @@
         [self.view addSubview:titleLabel];
         
         float y = CGRectGetMaxY(progressView.frame) + 5.f;
-        progressView.backgroundColor = [UIColor redColor];
         usedTimeLabel = [[UILabel alloc] initWithFrame:CGRectMake(20.f, y, 300.f, 20.f)];
         usedTimeLabel.autoresizingMask = UIViewAutoresizingFlexibleRightMargin|UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleBottomMargin;
         usedTimeLabel.textAlignment = NSTextAlignmentLeft;

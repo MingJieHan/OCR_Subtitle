@@ -51,6 +51,41 @@ static NSString * const reuseIdentifier = @"OCRTemplateIdentifier";
     return self;
 }
 
+-(void)refreshSetting:(OCRSetting *)setting{
+    NSInteger n = [templates indexOfObject:setting];
+    if (n >= 0){
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:n inSection:0];
+        [self reloadItemsAtIndexPaths:@[indexPath]];
+    }
+}
+
+-(NSArray <OCRSetting *>* _Nullable )availableSettingForVideo:(NSURL *)targetVideoURL{
+    if (nil == targetVideoURL){
+        return nil;
+    }
+    [targetVideoURL startAccessingSecurityScopedResource];
+    AVURLAsset *ass = [AVURLAsset assetWithURL:targetVideoURL];
+    if (nil == ass){
+        return nil;
+    }
+    AVAssetTrack *videoTrack = [ass tracksWithMediaType:AVMediaTypeVideo].firstObject;
+    if (nil == videoTrack){
+        return nil;
+    }
+    CGSize videoSize = [videoTrack naturalSize];
+    NSMutableArray *res = [[NSMutableArray alloc] init];
+    for (OCRSetting *the in templates){
+        if ([the.videoWidth floatValue] == videoSize.width
+            && [the.videoHeight floatValue] == videoSize.height){
+            [res addObject:the];
+        }
+    }
+    if (0 == res.count){
+        return nil;
+    }
+    return res;
+}
+
 -(void)setFrame:(CGRect)frame{
     [super setFrame:frame];
     float targetBlockWidth = 0.f;
@@ -82,11 +117,28 @@ static NSString * const reuseIdentifier = @"OCRTemplateIdentifier";
     return;
 }
 
+-(void)removeHandlerAction:(OCRTemplateCell *)cell{
+    [self performBatchUpdates:^{
+        NSInteger n = [templates indexOfObject:cell.item];
+        [templates removeObject:cell.item];
+        NSIndexPath *index = [NSIndexPath indexPathForRow:n inSection:0];
+        [self deleteItemsAtIndexPaths:@[index]];
+    } completion:^(BOOL finished) {
+        [OCRSubtitleManage.shared removeItem:cell.item];
+    }];
+    return;
+}
+
 -(void)openIndexPath:(OCRTemplateCell *)cell{
     if (openHandler){
         openHandler(cell.item);
     }
     return;
+}
+
+-(void)reloadData{
+    templates = [OCRSubtitleManage.shared existSettings];
+    [super reloadData];
 }
 
 #pragma mark <UICollectionViewDataSource>
@@ -103,6 +155,9 @@ static NSString * const reuseIdentifier = @"OCRTemplateIdentifier";
     cell.item = [templates objectAtIndex:indexPath.row];
     cell.moreHandler = ^(OCRTemplateCell * _Nonnull cell) {
         [self moreButtonAction:cell];
+    };
+    cell.removeHandler = ^(OCRTemplateCell * _Nonnull cell) {
+        [self removeHandlerAction:cell];
     };
     return cell;
 }

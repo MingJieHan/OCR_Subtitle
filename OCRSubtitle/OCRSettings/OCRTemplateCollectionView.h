@@ -21,5 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(id)initWithFrame:(CGRect)frame collectionViewLayout:(UICollectionViewLayout *)layout NS_UNAVAILABLE;
 
 -(id)initWithFrame:(CGRect)frame;
+-(void)refreshSetting:(OCRSetting *)setting;
+-(NSArray <OCRSetting *>* _Nullable )availableSettingForVideo:(NSURL *)targetVideoURL;
 @end
 NS_ASSUME_NONNULL_END

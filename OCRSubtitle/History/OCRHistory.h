@@ -16,11 +16,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic) NSString *srtInfo;
 @property (nonatomic) NSString *videoFileName;
-@property (nonatomic) NSData *thumbnailImageData;
+@property (nonatomic) NSData * _Nullable thumbnailImageData;
 @property (nonatomic) float sampleRate;
 @property (nonatomic) NSString *languageString;
 -(BOOL)save;
 
 +(id)demo;
+
+//srtInfo write into file and return file FullPath and Name
+//return nil when Error.
+-(NSString *)reWriteSRTInfo;
 @end
 NS_ASSUME_NONNULL_END
