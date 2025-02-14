@@ -17,16 +17,30 @@
 @implementation OCRLanguagesTableViewController
 @synthesize selectedLanguages;
 @synthesize saveHandler;
+@synthesize oneLanguageOnly;
 
+#pragma mark - System
 -(id)init{
     self = [super init];
     if (self){
         self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSave target:self action:@selector(saveAction)];
         availableLanguages = [OCRGetTextFromImage availableLanguages];
+        NSLog(@"Available:%@", availableLanguages);
     }
     return self;
 }
 
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    [self.navigationController setNavigationBarHidden:NO animated:YES];
+}
+
+-(void)viewDidAppear:(BOOL)animated{
+    [super viewDidAppear:animated];
+    [self.tableView reloadData];
+}
+
+#pragma mark - MyFunctions
 -(void)setSelectedLanguages:(NSMutableArray *)_selectedLanguages{
     selectedLanguages = _selectedLanguages;
     
@@ -50,10 +64,7 @@
     }
 }
 
--(void)viewDidAppear:(BOOL)animated{
-    [super viewDidAppear:animated];
-    [self.tableView reloadData];
-}
+
 
 #pragma mark - Table view data source
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -96,8 +107,14 @@
         return;
     }
     //select this language
+    if (oneLanguageOnly){
+        [selectedLanguages removeAllObjects];
+    }
     [selectedLanguages addObject:[availableLanguages objectAtIndex:indexPath.row]];
     cell.accessoryType = UITableViewCellAccessoryCheckmark;
+    if (oneLanguageOnly){
+        [self saveAction];
+    }
     return;
 }
 

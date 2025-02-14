@@ -9,11 +9,11 @@
 #import "OCRHistory.h"
 
 @class OCRHistoryCell;
-typedef void (^OCRHistoryCell_MoreAction) (OCRHistoryCell * _Nonnull cell);
+typedef void (^OCRHistoryCell_RemoveAction) (OCRHistoryCell * _Nonnull cell);
 
 NS_ASSUME_NONNULL_BEGIN
 @interface OCRHistoryCell : UICollectionViewCell
 @property (nonatomic) OCRHistory * _Nullable item;
-@property (nonatomic) OCRHistoryCell_MoreAction moreHandler;
+@property (nonatomic) OCRHistoryCell_RemoveAction removeHandler;
 @end
 NS_ASSUME_NONNULL_END

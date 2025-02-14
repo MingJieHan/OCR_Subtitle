@@ -22,6 +22,10 @@ NS_ASSUME_NONNULL_BEGIN
  */
 +(NSArray <NSString *>*)availableLanguages;
 
+//return 当前系统，最接近的OCR语言。
++(NSString *)systemSupportedRecognitionLanguage;
+
+
 //[OCRGetTextFromImage stringForLanguageCode:@"zh-Hans"];
 +(NSString *)stringForLanguageCode:(NSString *)languageIdentifier;
 

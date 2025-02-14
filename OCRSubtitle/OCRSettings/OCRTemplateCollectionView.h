@@ -11,6 +11,9 @@
 typedef void (^OCRTemplateCollectionView_OpenAction) (OCRSetting * _Nonnull setting);
 typedef void (^OCRTemplateCollectionView_EditAction) (OCRSetting * _Nonnull setting);
 
+
+extern UIColor * _Nonnull templateColor;
+
 NS_ASSUME_NONNULL_BEGIN
 @interface OCRTemplateCollectionView : UICollectionView
 @property (nonatomic) OCRTemplateCollectionView_OpenAction openHandler;

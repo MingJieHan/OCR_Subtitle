@@ -13,8 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 -(id)initWithCoder:(NSCoder *)coder NS_UNAVAILABLE;
 
 -(id)initWithFrame:(CGRect)frame;
-
-@property (nonatomic) UIColor *borderColor;
+@property (nonatomic) UIColor * _Nullable fontColor;
+@property (nonatomic) UIColor * _Nullable borderColor;
 @property (nonatomic) float borderWidth;
 @end
 NS_ASSUME_NONNULL_END

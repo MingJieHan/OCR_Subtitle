@@ -8,7 +8,10 @@
 #import "OCRTemplateCollectionView.h"
 #import "OCRTemplateCell.h"
 #import "OCRSubtitleManage.h"
+#import <HansServer/HansServer.h>
+
 static NSString * const reuseIdentifier = @"OCRTemplateIdentifier";
+UIColor * _Nonnull templateColor;
 
 @interface OCRTemplateCollectionView()<UICollectionViewDataSource,UICollectionViewDelegate>{
     NSMutableArray <OCRSetting *>*templates;
@@ -28,6 +31,8 @@ static NSString * const reuseIdentifier = @"OCRTemplateIdentifier";
     self = [super initWithFrame:frame collectionViewLayout:collectionFlowLayout];
     if (self){
         templates = [OCRSubtitleManage.shared existSettings];
+        templateColor = [UIHans colorFromHEXString:@"B3FCC8"];
+        self.backgroundColor = [UIColor whiteColor];
         if (0 == templates.count){
             OCRSetting *demoSetting = [OCRSetting wanruSetting];
             OCRSetting *o = [OCRSubtitleManage.shared createOCRSetting];
@@ -88,26 +93,10 @@ static NSString * const reuseIdentifier = @"OCRTemplateIdentifier";
 
 -(void)setFrame:(CGRect)frame{
     [super setFrame:frame];
-    float targetBlockWidth = 0.f;
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
-        //iPad
-        blockEdge = UIEdgeInsetsMake(0.f, 24.f, 0.f, 24.f);
-        minimumInteritemSpacing = 12.f;
-        float contentWidth = self.frame.size.width - blockEdge.left - blockEdge.right;
-        int row = (int)contentWidth/(int)(minimumInteritemSpacing + 332.f);
-        float availableWith = contentWidth - (row - 1) * (minimumInteritemSpacing + 2.f);
-        targetBlockWidth = availableWith/row;
-    }else{
-        //iPhone
-        blockEdge = UIEdgeInsetsMake(0.f, 2.f, 0.f, 2.f);;
-        minimumInteritemSpacing = 0.f;
-        targetBlockWidth = self.frame.size.width-4.f;
-    }
-    minimumLineSpacing = 40.f;
-    if (blockSize.width != targetBlockWidth){
-        blockSize = CGSizeMake(targetBlockWidth, 200.f);
-        [self reloadData];
-    }
+    blockEdge = UIEdgeInsetsMake(50.f, 2.f, 20.f, 2.f);
+    blockSize = CGSizeMake(125.f, 140.f);
+    minimumLineSpacing = 13.f;
+    return;
 }
 
 -(void)moreButtonAction:(OCRTemplateCell *)cell{

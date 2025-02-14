@@ -90,18 +90,24 @@
     changed = YES;
     [setting save];
     if (textDemoLabel){
-        textDemoLabel.textColor = setting.textColor;
+        textDemoLabel.fontColor = setting.textColor;
         textDemoLabel.borderColor = setting.borderColor;
     }
     if (borderDemoLabel){
-        borderDemoLabel.textColor = setting.textColor;
+        borderDemoLabel.fontColor = setting.textColor;
         borderDemoLabel.borderColor = setting.borderColor;
     }
+    
     [self.navigationController popViewControllerAnimated:YES];
     return;
 }
 
--(void)saveTextColor:(id)picker{
+-(void)cleanTextColor:(id)sender{
+    setting.textColor = nil;
+    [self closeColorSelector];
+    return;
+}
+-(void)saveTextColor:(id)sender{
     setting.textColor = textColorPicker.selectedColor;
     [self closeColorSelector];
     return;
@@ -113,25 +119,33 @@
     textColorPicker.selectedColor = setting.textColor;
     textColorPicker.modalInPresentation = NO;
     textColorPicker.delegate = self;
-    textColorPicker.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSave target:self action:@selector(saveTextColor:)];
+    UIBarButtonItem *saveItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSave target:self action:@selector(saveTextColor:)];
+    UIBarButtonItem *cleanItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemTrash target:self action:@selector(cleanTextColor:)];
+    textColorPicker.navigationItem.rightBarButtonItems = @[saveItem, cleanItem];
     textColorPicker.title = @"Text Color";
     [self.navigationController pushViewController:textColorPicker animated:YES];
     return;
 }
 
--(void)saveBorderColor:(id)picker{
+-(void)cleanBorderColor:(id)sender{
+    setting.borderColor = nil;
+    [self closeColorSelector];
+    return;
+}
+-(void)saveBorderColor:(id)sender{
     setting.borderColor = borderColorPicker.selectedColor;
     [self closeColorSelector];
     return;
 }
-
 -(void)setBorderColor{
     borderColorPicker = [[UIColorPickerViewController alloc] init];
     borderColorPicker.view.backgroundColor = [UIColor whiteColor];
     borderColorPicker.selectedColor = setting.borderColor;
     borderColorPicker.modalInPresentation = NO;
     borderColorPicker.delegate = self;
-    borderColorPicker.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSave target:self action:@selector(saveBorderColor:)];
+    UIBarButtonItem *saveItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSave target:self action:@selector(saveBorderColor:)];
+    UIBarButtonItem *cleanItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemTrash target:self action:@selector(cleanBorderColor:)];
+    borderColorPicker.navigationItem.rightBarButtonItems = @[saveItem,cleanItem];
     borderColorPicker.title = @"Border Color";
     [self.navigationController pushViewController:borderColorPicker animated:YES];
     return;
@@ -202,29 +216,31 @@
         cell.textLabel.text = @"Text Color";
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         if (nil == textDemoLabel){
-            textDemoLabel = [[HansBorderLabel alloc] initWithFrame:CGRectMake(cell.frame.size.width-110.f, 5.f, 50.f, 30.f)];
+            textDemoLabel = [[HansBorderLabel alloc] initWithFrame:CGRectMake(cell.frame.size.width-130.f, 7.f, 90.f, 30.f)];
             textDemoLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+            textDemoLabel.backgroundColor = [UIHans colorFromHEXString:@"B3FCC8"];
             textDemoLabel.layer.masksToBounds = YES;
-            textDemoLabel.layer.cornerRadius = 2.f;
+            textDemoLabel.layer.cornerRadius = 3.f;
             textDemoLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:24.f];
             textDemoLabel.text = @"Text";
             [cell addSubview:textDemoLabel];
         }
-        textDemoLabel.textColor = setting.textColor;
+        textDemoLabel.fontColor = setting.textColor;
         textDemoLabel.borderColor = setting.borderColor;
     }else if ([identifier isEqualToString:CELL_KEY_BorderColor]){
         cell.textLabel.text = @"Border Color";
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         if (nil == borderDemoLabel){
-            borderDemoLabel = [[HansBorderLabel alloc] initWithFrame:CGRectMake(cell.frame.size.width-110.f, 5.f, 50.f, 30.f)];
+            borderDemoLabel = [[HansBorderLabel alloc] initWithFrame:CGRectMake(cell.frame.size.width-130.f, 7.f, 90.f, 30.f)];
             borderDemoLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+            borderDemoLabel.backgroundColor = [UIHans colorFromHEXString:@"B3FCC8"];
             borderDemoLabel.layer.masksToBounds = YES;
-            borderDemoLabel.layer.cornerRadius = 2.f;
+            borderDemoLabel.layer.cornerRadius = 3.f;
             borderDemoLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:24.f];
             borderDemoLabel.text = @"Border";
             [cell addSubview:borderDemoLabel];
         }
-        borderDemoLabel.textColor = setting.textColor;
+        borderDemoLabel.fontColor = setting.textColor;
         borderDemoLabel.borderColor = setting.borderColor;
     }else if ([identifier isEqualToString:CELL_KEY_NAME]){
         cell.textLabel.text = @"Name";

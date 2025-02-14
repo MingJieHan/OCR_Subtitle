@@ -54,45 +54,54 @@
 -(void)viewDidLoad{
     [super viewDidLoad];
     NSLog(@"Home:%@", NSHomeDirectory());
+    self.view.backgroundColor = [UIColor whiteColor];
     progressVC = [[OCRProgressViewController alloc] init];
     
     ViewController * __strong strongSelf = self;
     float y = 400.f;
-    templateView = [[OCRTemplateCollectionView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.view.frame.size.width, y)];
-    templateView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    
+    templateView = [[OCRTemplateCollectionView alloc] initWithFrame:CGRectMake(self.view.frame.size.width-130.f, 20.f, 130.f, self.view.frame.size.height-60.f)];
+    templateView.autoresizingMask = UIViewAutoresizingFlexibleHeight;
     templateView.openHandler = ^(OCRSetting * _Nonnull selectedSetting) {
+        [strongSelf hiddenTemplates:nil];
         self->setting = selectedSetting;
         [strongSelf selectFileAction];
     };
     templateView.editHandler = ^(OCRSetting * _Nonnull selectedSetting) {
+        [strongSelf hiddenTemplates:nil];
         [strongSelf showTemplateDetailWithSetting:selectedSetting];
     };
     [self.view addSubview:templateView];
     
     y += 10.f;
-    historyView = [[OCRHistoryCollectionView alloc] initWithFrame:CGRectMake(0.f, y, self.view.frame.size.width, self.view.frame.size.height-y-40.f)];
+    historyView = [[OCRHistoryCollectionView alloc] initWithFrame:CGRectMake(0.f, 20.f, self.view.frame.size.width, self.view.frame.size.height-60.f)];
     historyView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
     historyView.shareHandler = ^(OCRHistory * _Nonnull history) {
+        [strongSelf hiddenTemplates:nil];
         [strongSelf moreActionWith:history];
     };
-    historyView.openHandler = ^(OCRHistory * _Nonnull history) {
-        if (nil == history){
+    historyView.openHandler = ^(OCRHistoryCell * _Nonnull historyCell) {
+        [strongSelf hiddenTemplates:nil];
+        if (nil == historyCell.item){
             self->setting = nil;
             [strongSelf selectFileAction];
         }else{
-            NSString *fullPathFile = [history reWriteSRTInfo];
-            if (fullPathFile){
-                [strongSelf preViewFile:fullPathFile];
-            }
+            [strongSelf openExistOCRHistory:historyCell];
         }
     };
+    UISwipeGestureRecognizer *leftSwipe = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(showTemplates:)];
+    leftSwipe.direction = UISwipeGestureRecognizerDirectionLeft;
+    [historyView addGestureRecognizer:leftSwipe];
+    UISwipeGestureRecognizer *rightSwipe = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(hiddenTemplates:)];
+    rightSwipe.direction = UISwipeGestureRecognizerDirectionRight;
+    [historyView addGestureRecognizer:rightSwipe];
     [self.view addSubview:historyView];
     
     verLabel = [[UILabel alloc] initWithFrame:CGRectMake(0.f, self.view.frame.size.height-40.f, self.view.frame.size.width, 30.f)];
     verLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin;
     verLabel.font = [UIFont fontWithName:@"PingFangSC-Light" size:12.f];
     verLabel.textAlignment = NSTextAlignmentCenter;
-    verLabel.text = [NSString stringWithFormat:@"OCR Subtitle ver:%@ buile:%@", UIHans.appVersion, UIHans.appBuildVersion];
+    verLabel.text = [NSString stringWithFormat:@"OCR Subtitle version:%@ build:%@", UIHans.appVersion, UIHans.appBuildVersion];
     [self.view addSubview:verLabel];
     
 //    y = CGRectGetMaxY(debugButton.frame)+20.f;
@@ -106,6 +115,24 @@
 //    for (NSString *descriptString in languages){
 //        NSLog(@"%@", descriptString);
 //    }
+}
+
+-(void)openExistOCRHistory:(OCRHistoryCell * _Nonnull)historyCell{
+    NSString *fullPathFile = [historyCell.item reWriteSRTInfo];
+    UIView *thumbnail = [historyCell snapshotViewAfterScreenUpdates:NO];
+    CGRect rect = [historyView convertRect:historyCell.frame toView:self.view];
+    [thumbnail setFrame:rect];
+    [self.view addSubview:thumbnail];
+    [UIView animateWithDuration:0.6 animations:^{
+        [thumbnail setFrame:CGRectMake(0.f, 0.f, self.view.frame.size.width, self.view.frame.size.height)];
+        thumbnail.alpha = 0.f;
+    } completion:^(BOOL finished) {
+        [thumbnail removeFromSuperview];
+    }];
+    
+    if (fullPathFile){
+        [self preViewFile:fullPathFile];
+    }
 }
 
 -(void)preViewFile:(NSString *)file{
@@ -145,8 +172,13 @@
 //    [UIHans.currentVC presentViewController:v animated:YES completion:nil];    
 }
 
+UIDocumentBrowserViewController *documentBrowserVC;
+-(void)cancelFileSelectAction:(id)sender{
+    [documentBrowserVC dismissViewControllerAnimated:YES completion:nil];
+    return;
+}
+
 -(void)selectFileAction{
-    UIDocumentPickerViewController *picker = nil;
     NSArray *types = @[@"mp4", @"mov"];
     NSMutableArray *utTypes = [[NSMutableArray alloc] init];
     for (NSString *tString in types){
@@ -154,20 +186,21 @@
         [utTypes addObject:type];
     }
     types = utTypes;
-    if (@available(macCatalyst 14, *)) {
-        UIDocumentBrowserViewController *b = [[UIDocumentBrowserViewController alloc] initForOpeningContentTypes:types];
-        b.allowsPickingMultipleItems = NO;
-        b.allowsDocumentCreation = NO;
-        b.delegate = self;
-        [UIHans.currentVC presentViewController:b animated:YES completion:nil];
-        return;
+    documentBrowserVC = [[UIDocumentBrowserViewController alloc] initForOpeningContentTypes:types];
+    if (nil == setting){
+        documentBrowserVC.title = @"Select a video for scan subtitles.";
     }else{
-        picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:types];
+        documentBrowserVC.title = [NSString stringWithFormat:@"Video for:%@ %dx%d", setting.name,
+                                   [setting.videoWidth intValue],[setting.videoHeight intValue]];
     }
-    
-    picker.allowsMultipleSelection = NO;
-    picker.delegate = self;
-    [UIHans.currentVC presentViewController:picker animated:YES completion:nil];
+    documentBrowserVC.allowsPickingMultipleItems = NO;
+    documentBrowserVC.allowsDocumentCreation = NO;
+    documentBrowserVC.delegate = self;
+    UIBarButtonItem *cancelButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self action:@selector(cancelFileSelectAction:)];
+    documentBrowserVC.additionalTrailingNavigationBarButtonItems = @[cancelButtonItem];
+    UINavigationController *n = [[UINavigationController alloc] initWithRootViewController:documentBrowserVC];
+    documentBrowserVC.navigationItem.rightBarButtonItem = cancelButtonItem;
+    [UIHans.currentVC presentViewController:n animated:YES completion:nil];
     return;
 }
 
@@ -389,7 +422,13 @@
         
         [self->templateView reloadData];
         
-        [self showTemplateDetailWithSetting:newSetting];
+        //Scan subtitle for video with new setting
+        self->setting = newSetting;
+        self->videoURL = targetVideoURL;
+        [self beginGotTextWorking];
+        
+        //show new created template.
+//        [self showTemplateDetailWithSetting:newSetting];
     };
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:v];
     nav.modalPresentationStyle = UIModalPresentationFullScreen;
@@ -434,7 +473,8 @@
         }else{
             //视频宽高比例不同
         }
-        errorString = [NSString stringWithFormat:@"Template size is %ld x %ld, but video size is %.0f x %.0f",
+        errorString = [NSString stringWithFormat:@"Template %@ size is %ld x %ld,\nBut selected video is %.0f x %.0f",
+                       setting.name,
                        [setting.videoWidth longValue],
                        [setting.videoHeight longValue],
                        bufferFromVideo.videoSize.width,
@@ -548,6 +588,30 @@
     [UIHans shareFile:fullPathFile];
 }
 
+-(void)showTemplates:(id)sender{
+    float distance = 140.f;
+    self.view.userInteractionEnabled = NO;
+    [UIView animateWithDuration:0.3 delay:0.f options:UIViewAnimationOptionCurveEaseIn animations:^{
+        [self->historyView setFrame:CGRectMake(-distance, self->historyView.frame.origin.y, self->historyView.frame.size.width, self->historyView.frame.size.height)];
+    } completion:^(BOOL finished) {
+        self.view.userInteractionEnabled = YES;
+    }];
+    return;
+}
+
+-(void)hiddenTemplates:(id)sender{
+    if (0.f == historyView.frame.origin.x){
+        return;
+    }
+    self.view.userInteractionEnabled = NO;
+    [UIView animateWithDuration:0.3 delay:0.f options:UIViewAnimationOptionCurveEaseIn animations:^{
+        [self->historyView setFrame:CGRectMake(0.f, self->historyView.frame.origin.y, self->historyView.frame.size.width, self->historyView.frame.size.height)];
+    } completion:^(BOOL finished) {
+        self.view.userInteractionEnabled = YES;
+    }];
+    return;
+}
+
 #pragma mark - UIDocumentPickerDelegate
 - (void)documentPicker:(UIDocumentPickerViewController *)controller
         didPickDocumentsAtURLs:(NSArray <NSURL *>*)urls API_AVAILABLE(ios(11.0)){
@@ -567,7 +631,6 @@
     }];
     return;
 }
-
 
 #pragma mark - Debug Functions
 

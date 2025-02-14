@@ -6,7 +6,9 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "OCRTemplateCollectionView.h"
 #import "OCRSetting.h"
+
 @class OCRTemplateCell;
 typedef void (^OCRTemplateCell_MoreAction) (OCRTemplateCell * _Nonnull cell);
 typedef void (^OCRTemplateCell_RemoveAction) (OCRTemplateCell * _Nonnull cell);

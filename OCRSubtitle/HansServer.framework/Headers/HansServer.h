@@ -6,6 +6,8 @@
 //
 
 #import <Foundation/Foundation.h>
+#pragma mark - Hans Category
+#import <HansServer/NSHansCategory.h>
 
 #pragma mark - Hans Account
 #import <HansServer/HansServerHandler.h>

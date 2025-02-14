@@ -24,6 +24,48 @@
     return results;
 }
 
+/*
+    [[NSLocale preferredLanguages] objectAtIndex:0] 结果 可能不在
+    [OCRGetTextFromImage availableLanguages] 返回的结果中，
+ 如 en-CN 在中国区设置系统为英文
+ 支持的OCR语言描述为 en-US 因此
+ 首先在 availableLanguages 全匹配，如果找到，则返回
+ 然后，去掉国家码后再次匹配查找，如找到则返回
+ 最后，返回 availableLanguages 的第一个
+ */
++(NSString *)systemSupportedRecognitionLanguage{
+    NSString *systemLanguageIdentifier = [[NSLocale preferredLanguages] objectAtIndex:0];
+    NSArray <NSString *>* availableLanguages = [OCRGetTextFromImage availableLanguages];
+    for (NSString *an in availableLanguages){
+        if ([an isEqualToString:systemLanguageIdentifier]){
+            return systemLanguageIdentifier;
+        }
+    }
+    
+    NSString *systemLanguageOnly = [OCRGetTextFromImage removeCountryCodeForLanguageIdentifier:systemLanguageIdentifier];
+    for (NSString *an in availableLanguages){
+        NSString *anWithoutCountryCode = [OCRGetTextFromImage removeCountryCodeForLanguageIdentifier:an];
+        if ([anWithoutCountryCode isEqualToString:systemLanguageOnly]){
+            return an;
+        }
+    }
+    return availableLanguages.firstObject;
+}
+
++(NSString *)removeCountryCodeForLanguageIdentifier:(NSString *)identifier{
+    NSDictionary *dict = [NSLocale componentsFromLocaleIdentifier:identifier];
+    NSString *countryCode = [dict valueForKey:@"kCFLocaleCountryCodeKey"];
+//    NSString *scriptCode = [dict valueForKey:@"kCFLocaleScriptCodeKey"];
+//    NSString *localLanguageCode = [dict valueForKey:@"kCFLocaleLanguageCodeKey"];
+    
+    if (countryCode && countryCode.length > 0){
+        NSString *tryString = [@"-" stringByAppendingString:countryCode];
+        return [identifier stringByReplacingOccurrencesOfString:tryString withString:@""];
+    }
+    return identifier;
+}
+
+
 +(NSString *)stringForLanguageCode:(NSString *)languageIdentifier{
 //    NSString *language = [NSLocale.systemLocale localizedStringForLanguageCode:languageIdentifier];
     NSDictionary *dict = [NSLocale componentsFromLocaleIdentifier:languageIdentifier];

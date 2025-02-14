@@ -38,7 +38,16 @@
     gottedString = _gottedString;
     dispatch_async(dispatch_get_main_queue(), ^{
         HansBorderLabel *gottedStringLabel = [[HansBorderLabel alloc] initWithFrame:self->scanningRect];
-        gottedStringLabel.borderColor = self->gottedStringBorderColor;
+        if (nil == self->gottedStringBorderColor){
+            gottedStringLabel.borderColor = [UIColor blackColor];
+        }else{
+            gottedStringLabel.borderColor = self->gottedStringBorderColor;
+        }
+        if (nil == self->gottedStringColor){
+            gottedStringLabel.fontColor = [UIColor whiteColor];
+        }else{
+            gottedStringLabel.fontColor = self->gottedStringColor;
+        }
         gottedStringLabel.borderWidth = self->gottedStringBorderWidth;
         gottedStringLabel.text = self->gottedString;
         [UIView animateWithDuration:0.3 animations:^{
@@ -67,16 +76,9 @@
             self->startDate = NSDate.date;
         }
         float second = [NSDate.date timeIntervalSinceDate:self->startDate];
-        int sec = (int)second;
-        int minute = sec/60;
-        sec = sec%60;
-        self->usedTimeLabel.text = [NSString stringWithFormat:@"%02d:%02d", minute, sec];
-        
+        self->usedTimeLabel.text = [NSString stringWithSecond:second];
         float requiredSecond = second/self->progress - second;
-        sec = (int)requiredSecond;
-        minute = sec/60;
-        sec = sec%60;
-        self->requiredTimeLabel.text = [NSString stringWithFormat:@"%02d:%02d", minute, sec];
+        self->requiredTimeLabel.text = [NSString stringWithSecond:requiredSecond];
     });
     return;
 }

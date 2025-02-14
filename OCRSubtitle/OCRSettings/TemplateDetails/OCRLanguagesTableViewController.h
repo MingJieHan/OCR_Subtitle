@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface OCRLanguagesTableViewController : UITableViewController
 @property (nonatomic) NSMutableArray *selectedLanguages;
 @property (nonatomic) OCRLanguagesTableViewController_SaveHandler saveHandler;
+@property (nonatomic) BOOL oneLanguageOnly; //default is NO;
 -(id)init;
 
 

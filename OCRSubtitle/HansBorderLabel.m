@@ -15,6 +15,7 @@
 @implementation HansBorderLabel
 @synthesize borderColor;
 @synthesize borderWidth;
+@synthesize fontColor;
 
 -(id)initWithFrame:(CGRect)frame{
     self = [super initWithFrame:frame];
@@ -33,38 +34,40 @@
 
 - (void)drawTextInRect:(CGRect)rect {
     CGSize shadowOffset = self.shadowOffset;
-    UIColor *textColor = self.textColor;
     CGContextRef c = UIGraphicsGetCurrentContext();
     CGContextSetLineWidth(c, borderWidth);
     CGContextSetLineJoin(c, kCGLineJoinRound);
 
-      CGContextSetTextDrawingMode(c, kCGTextStroke);
-      self.textColor = borderColor;
-      [super drawTextInRect:rect];
+    CGContextSetTextDrawingMode(c, kCGTextStroke);
+    if (nil == borderColor){
+        self.textColor = [UIColor clearColor];
+    }else{
+        self.textColor = borderColor;
+    }
+    [super drawTextInRect:rect];
 
-      CGContextSetTextDrawingMode(c, kCGTextFill);
-      self.textColor = textColor;
-      self.shadowOffset = CGSizeMake(0, 0);
-      [super drawTextInRect:rect];
-
-      self.shadowOffset = shadowOffset;
+    CGContextSetTextDrawingMode(c, kCGTextFill);
+    if (nil == fontColor){
+        self.textColor = [UIColor clearColor];
+    }else{
+        self.textColor = fontColor;
+    }
+    self.shadowOffset = CGSizeMake(0, 0);
+    [super drawTextInRect:rect];
+    
+    self.shadowOffset = shadowOffset;
+    return;
 }
 
 -(void)setBorderColor:(UIColor *)_borderColor{
-    if (nil == _borderColor){
-        borderColor = [UIColor clearColor];
-    }else{
-        borderColor = _borderColor;
-    }
+    borderColor = _borderColor;
+    [self setNeedsDisplay];
     return;
 }
 
--(void)setTextColor:(UIColor *)_textColor{
-    if (nil == _textColor){
-        [super setTextColor:[UIColor clearColor]];
-    }else{
-        [super setTextColor:_textColor];
-    }
-    return;
+-(void)setFontColor:(UIColor *)_fontColor{
+    fontColor = _fontColor;
+    [self setNeedsDisplay];
 }
+
 @end

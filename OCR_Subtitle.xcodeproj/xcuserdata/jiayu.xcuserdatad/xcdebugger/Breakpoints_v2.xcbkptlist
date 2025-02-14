@@ -282,8 +282,8 @@
             filePath = "OCRSubtitle/ViewController.m"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "114"
-            endingLineNumber = "114"
+            startingLineNumber = "141"
+            endingLineNumber = "141"
             landmarkName = "-preViewFile:"
             landmarkType = "7">
          </BreakpointContent>
@@ -291,16 +291,16 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "83821A91-1718-4DD9-80BA-3AC79F379BEB"
+            uuid = "E70AA6E9-8F84-4C82-AD81-17351CD80BE0"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "OCRSubtitle/ViewController.m"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "405"
-            endingLineNumber = "405"
-            landmarkName = "-exceptStopWithErrorString:"
+            startingLineNumber = "625"
+            endingLineNumber = "625"
+            landmarkName = "-documentPickerWasCancelled:"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

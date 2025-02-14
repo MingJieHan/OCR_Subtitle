@@ -6,7 +6,7 @@
 //
 
 #import "AreaSelectButton.h"
-
+#import <HansServer/HansServer.h>
 @interface AreaSelectButton(){
     CGPoint topLeft;
     CGPoint topRight;
@@ -22,17 +22,31 @@
 @implementation AreaSelectButton
 @synthesize observation;
 @synthesize size;
+@synthesize string;
+@synthesize isSubtitle;
 
--(id)initWithRectangleObservation:(VNRectangleObservation *)_observation withSize:(CGSize)_size{
+-(id)initWithRectangleObservation:(VNRectangleObservation *)_observation
+                         withSize:(CGSize)_size
+                       withString:(NSString *)_string{
     self = [super init];
     if (self){
         size = _size;
-        self.layer.borderColor = [UIColor greenColor].CGColor;
-        self.layer.borderWidth = 2.f;
-        self.layer.cornerRadius = 4.f;
+        string = _string;
+        self.backgroundColor = [UIColor clearColor];
 //        self.layer.masksToBounds = YES;
         
         observation = _observation;
+        isSubtitle = [self isSubtitle];
+        self.enabled = isSubtitle;
+        if (isSubtitle){
+            self.layer.borderColor = [UIHans colorFromHEXString:@"FACC0B"].CGColor;
+            self.layer.borderWidth = 5.f;
+            self.layer.cornerRadius = 4.f;
+        }else{
+            self.layer.borderColor = [UIHans colorFromHEXString:@"2B963D"].CGColor;
+            self.layer.borderWidth = 2.f;
+            self.layer.cornerRadius = 4.f;
+        }
         topLeft = CGPointMake(observation.topLeft.x * size.width, (1.f- observation.topLeft.y) * size.height);
         topRight = CGPointMake(observation.topRight.x * size.width, (1.f- observation.topRight.y) * size.height);
         bottomLeft = CGPointMake(observation.bottomLeft.x * size.width, (1.f- observation.bottomLeft.y) * size.height);
@@ -60,7 +74,6 @@
             minY = bottomRight.y;
         }
         
-        
         maxX = topLeft.x;
         if (topRight.x > maxX){
             maxX = topRight.x;
@@ -82,8 +95,7 @@
         if (bottomRight.y > maxY){
             maxY = bottomRight.y;
         }
-        CGRect rect = CGRectMake(minX,
-                                 minY,
+        CGRect rect = CGRectMake(minX,minY,
                                  maxX-minX,
                                  maxY-minY);
         [self setFrame:rect];
@@ -99,6 +111,36 @@
     return (maxY - minY)/size.height;
 }
 
+-(BOOL)isSubtitle{
+    if (fabs(observation.topLeft.y - observation.topRight.y) > 0.01f){
+//        NSLog(@"%@ 上沿不平.", self.string);
+        return NO;
+    }
+    if (fabs(observation.topLeft.x - observation.bottomLeft.x) > 0.01f){
+//        NSLog(@"%@ 左侧不平.", self.string);
+        return NO;
+    }
+    if (fabs(observation.topRight.x - observation.bottomRight.x) > 0.01f){
+//        NSLog(@"%@ 右侧不平.", self.string);
+        return NO;
+    }
+    if (fabs(observation.bottomLeft.y - observation.bottomRight.y) > 0.01f){
+//        NSLog(@"%@ 下沿不平.", self.string);
+        return NO;
+    }
+    
+    float spaceRight = 1.f - observation.topRight.x;
+    float aaa = fabs(spaceRight - observation.topLeft.x);
+    if ( aaa > 0.2){
+//        NSLog(@"不居中 %@: %.2f", string, aaa);
+        return NO;
+    }
+    
+//    NSLog(@"Subtitle %@: %.2f", string, aaa);
+    return YES;
+}
+
+
 -(void)drawRect:(CGRect)rect{
     [super drawRect:rect];
     
@@ -110,9 +152,14 @@
     CGPathAddLineToPoint(path, nil, topLeft.x - minX, topLeft.y - minY);
     CGPathCloseSubpath(path);
     
-    
     CGContextRef context = UIGraphicsGetCurrentContext();
-    CGContextSetFillColorWithColor(context, [UIColor colorWithRed:0.8f green:0.1 blue:0.1 alpha:0.5].CGColor);
+    if (isSubtitle){
+        CGContextSetFillColorWithColor(context, [UIHans colorFromHEXString:@"2B68EB" withAlpha:0.7].CGColor);
+//        NSLog(@"%@ True.", string);
+    }else{
+        CGContextSetFillColorWithColor(context, [UIColor colorWithRed:0.4f green:0.4 blue:0.4 alpha:0.2].CGColor);
+//        NSLog(@"%@ False.", string);
+    }
     CGContextAddPath(context, path);
     CGContextFillPath(context);
     CGPathRelease(path);

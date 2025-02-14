@@ -6,7 +6,6 @@
 //
 
 #import "OCRHistoryCollectionView.h"
-#import "OCRHistoryCell.h"
 #import "OCRSubtitleManage.h"
 
 static NSString * const reuseIdentifier = @"OCRHistoryIdentifier";
@@ -70,7 +69,11 @@ static NSString * const reuseIdentifier = @"OCRHistoryIdentifier";
 
 -(void)openIndexPath:(OCRHistoryCell *)cell{
     if (openHandler){
-        openHandler(cell.item);
+        self.userInteractionEnabled = NO;
+        [NSTimer scheduledTimerWithTimeInterval:0.3f repeats:NO block:^(NSTimer * _Nonnull timer) {
+            self->openHandler(cell);
+            self.userInteractionEnabled = YES;
+        }];
     }
     return;
 }
@@ -117,7 +120,7 @@ static NSString * const reuseIdentifier = @"OCRHistoryIdentifier";
     }else{
         cell.item = [historys objectAtIndex:indexPath.row-1];
     }
-    cell.moreHandler = ^(OCRHistoryCell * _Nonnull cell) {
+    cell.removeHandler = ^(OCRHistoryCell * _Nonnull cell) {
         [self moreButtonAction:cell];
     };
     return cell;
