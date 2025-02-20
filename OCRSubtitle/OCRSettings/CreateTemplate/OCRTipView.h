@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(id)init NS_UNAVAILABLE;
 
 -(id)initWithFrame:(CGRect)frame;
--(void)showWithString:(NSString *)string;
+-(void)showWithTitle:(NSString *)title withText:(NSString *)text;
 -(void)hiddenTip;
 @end
 NS_ASSUME_NONNULL_END

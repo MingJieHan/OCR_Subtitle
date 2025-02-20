@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(BOOL)saveSegments;
 -(BOOL)loadSegments;
 
+-(NSUInteger)numOfSegments;
 -(void)add:(OCRSegment *)segment withSubtitleImage:(CGImageRef)subtitleCGImage withSource:(CGImageRef)subtitleSourceCGImage;
 -(void)clear;
 
@@ -26,6 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(BOOL)filterWithScopeRect:(CGRect)scopeRect;
 -(BOOL)filterWithTail:(NSArray <NSString *>*)removeArray;
 -(void)testString:(NSString *)testString;
+
 
 //Mutex thread, return object in line
 -(NSUInteger)appendSample:(CMSampleBufferRef)ciImage;

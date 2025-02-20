@@ -9,11 +9,15 @@
 #import "OCRAreaSelectViewController.h"
 #import <Vision/Vision.h>
 #import "OCRGetImageFromVideo.h"
-#import "AreaSelectButton.h"
 #import "OCRGetTextFromImage.h"
 #import "OCRLanguagesTableViewController.h"
 #import <HansServer/HansServer.h>
 #import "OCRTipView.h"
+
+#import "AreaSelectButton.h"
+#import "AreaSubtitleTipView.h"
+
+
 
 @interface OCRAreaSelectViewController ()<UIScrollViewDelegate>{
     NSURL *videoURL;
@@ -51,8 +55,8 @@
     self = [super init];
     if (self){
         videoURL = _videoURL;
-        self.title = @"Creating Template";
-        self.view.backgroundColor = [UIColor whiteColor];
+        self.title = NSLocalizedString(@"Creating Template", nil);
+        self.view.backgroundColor = [UIHans colorFromHEXString:@"EFEEF6"];
         self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self action:@selector(cancel)];
         
         float x = 0.f;
@@ -79,7 +83,7 @@
         scrollV.delegate = self;
         scrollV.minimumZoomScale = 0.5;
         scrollV.maximumZoomScale = 5.f;
-        scrollV.backgroundColor = [UIHans colorFromHEXString:@"EFEEF6"];
+        scrollV.backgroundColor = self.view.backgroundColor;
         [self.view addSubview:scrollV];
         
         imageView = [[UIImageView alloc] initWithFrame:CGRectZero];
@@ -91,14 +95,16 @@
         
         float leftSpace = 5.f;
         float leftWidth = 130.f;
-        y = CGRectGetMaxY(scrollV.frame);
+        y = CGRectGetMaxY(scrollV.frame)+3.f;
         x = 2 * leftSpace + leftWidth;
         languageLabel = [[UILabel alloc] initWithFrame:CGRectMake(leftSpace, y, leftWidth, 30.f)];
+        languageLabel.autoresizingMask = UIViewAutoresizingFlexibleTopMargin;
         languageLabel.textColor = [UIColor blackColor];
         languageLabel.backgroundColor = [UIColor clearColor];
-        languageLabel.text = @"Scan Language:";
+        languageLabel.text = NSLocalizedString(@"Subtitle Language:",nil);
         [self.view addSubview:languageLabel];
         currentLanguageButton = [[UIHansButton alloc] initWithFrame:CGRectMake(x, y, self.view.frame.size.width-x-leftSpace, 30.f)];
+        currentLanguageButton.autoresizingMask = UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleWidth;
         currentLanguageButton.enabled = YES;
         currentLanguageButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:12.f];
         [currentLanguageButton setTitle:[OCRGetTextFromImage stringForLanguageCode:scaningLanguageIdentifier] forState:UIControlStateNormal];
@@ -111,11 +117,13 @@
         
         y = CGRectGetMaxY(currentLanguageButton.frame)+5.f;
         timeLabel = [[UILabel alloc] initWithFrame:CGRectMake(leftSpace, y, leftWidth, 30.f)];
+        timeLabel.autoresizingMask = UIViewAutoresizingFlexibleTopMargin;
         timeLabel.textColor = [UIColor blackColor];
         timeLabel.backgroundColor = [UIColor clearColor];
-        timeLabel.text = @"Time:";
+        timeLabel.text = NSLocalizedString(@"Thumbnail Time:",nil);
         [self.view addSubview:timeLabel];
         progressSelectorView = [[UISlider alloc] initWithFrame:CGRectMake(x, y, self.view.frame.size.width-x-leftSpace, 30.f)];
+        progressSelectorView.autoresizingMask = UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleWidth;
         [progressSelectorView addTarget:self action:@selector(thumbnailChanged:) forControlEvents:UIControlEventTouchUpInside];
         progressSelectorView.maximumValue = 1.f;
         progressSelectorView.minimumValue = 0.f;
@@ -123,11 +131,13 @@
 
         y = CGRectGetMaxY(progressSelectorView.frame)+5.f;
         nameLabel = [[UILabel alloc] initWithFrame:CGRectMake(leftSpace, y, leftWidth, 30.f)];
+        nameLabel.autoresizingMask = UIViewAutoresizingFlexibleTopMargin;
         nameLabel.textColor = [UIColor blackColor];
         nameLabel.backgroundColor = [UIColor clearColor];
-        nameLabel.text = @"Template Name:";
+        nameLabel.text = NSLocalizedString(@"Template Name:",nil);
         [self.view addSubview:nameLabel];
         currentNameButton = [[UIHansButton alloc] initWithFrame:CGRectMake(x, y, self.view.frame.size.width-x-leftSpace, 30.f)];
+        currentNameButton.autoresizingMask = UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleWidth;
         currentNameButton.enabled = YES;
         currentNameButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:12.f];
         [currentNameButton setTitle:suggestName forState:UIControlStateNormal];
@@ -138,11 +148,15 @@
         currentNameButton.layer.borderWidth = 1.f;
         [self.view addSubview:currentNameButton];
         
-        tipView = [[OCRTipView alloc] initWithFrame:CGRectMake(0.f, -120.f, self.view.frame.size.width, 120.f)];
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            tipView = [[OCRTipView alloc] initWithFrame:CGRectMake(0.f, -100.f, self.view.frame.size.width, 100.f)];
+        }else{
+            tipView = [[OCRTipView alloc] initWithFrame:CGRectMake(0.f, -130.f, self.view.frame.size.width, 130.f)];
+        }
         [self.view addSubview:tipView];
         
         cancelButton = [[UIHansButton alloc] initWithFrame:CGRectMake(5.f, 50.f, 60.f, 40.f)];
-        [cancelButton setTitle:@"Cancel" forState:UIControlStateNormal];
+        [cancelButton setTitle:NSLocalizedString(@"Cancel",nil) forState:UIControlStateNormal];
         [cancelButton setBackgroundColor:[UIColor orangeColor] forState:UIControlStateNormal];
         cancelButton.enabled = YES;
         [cancelButton addTarget:self action:@selector(cancel) forControlEvents:UIControlEventTouchUpInside];
@@ -175,6 +189,7 @@
     [super viewWillLayoutSubviews];
     UIEdgeInsets edg = self.view.safeAreaInsets;
     [scrollV setFrame:CGRectMake(edg.left, edg.top, self.view.frame.size.width-edg.left-edg.right, self.view.frame.size.height-edg.top-edg.bottom-190.f)];
+    [self refreshThumbnailImage];
     return;
 }
 
@@ -192,7 +207,9 @@
         self->scaningLanguageIdentifier = vc.selectedLanguages.firstObject;
         [self->currentLanguageButton setTitle:[OCRGetTextFromImage stringForLanguageCode:self->scaningLanguageIdentifier] forState:UIControlStateNormal];
         self->request.recognitionLanguages = @[self->scaningLanguageIdentifier];
-        [self scanImage];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self refreshThumbnailImage];
+        });
     };
     [self.navigationController pushViewController:v animated:YES];
     return;
@@ -227,34 +244,43 @@
     [getImage getImageWithValue:t withHandler:^(CGImageRef _Nonnull imageRef) {
         self->thumbnailImage = [[UIImage alloc] initWithCGImage:imageRef];
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self scanImage];
+            [self refreshThumbnailImage];
         });
     }];
 }
 
--(void)scanImage{
+-(void)refreshThumbnailImage{
     if (thumbnailImage){
+        scrollV.maximumZoomScale = 10.f;
+        scrollV.minimumZoomScale = 0.5f;
+        [scrollV setZoomScale:1.f animated:NO];
+        scrollV.backgroundColor = [UIColor clearColor];
         videoSize = thumbnailImage.size;
         
         //改放大系数
         float scaleX = scrollV.frame.size.width/thumbnailImage.size.width;
         float scaleY = scrollV.frame.size.height/thumbnailImage.size.height;
-        scrollV.minimumZoomScale = scaleX;
-        CGPoint offset = CGPointMake(0.f, (thumbnailImage.size.height * scaleX - scrollV.frame.size.height)/2.f);
+        CGPoint offset = CGPointZero;
         if (scaleY < scaleX){
+            //竖版视频
             scrollV.minimumZoomScale = scaleY;
+            scrollV.maximumZoomScale = scaleY;
             offset = CGPointMake((thumbnailImage.size.width * scaleY - scrollV.frame.size.width)/2.f, 0.f);
+        }else{
+            //横向视频
+            scrollV.minimumZoomScale = scaleX;
+            scrollV.maximumZoomScale = scaleX;
+            offset = CGPointMake(0.f, (thumbnailImage.size.height * scaleX - scrollV.frame.size.height)/2.f);
         }
-        [scrollV setZoomScale:scrollV.minimumZoomScale animated:YES];
-        [scrollV setContentOffset:offset animated:YES];
         
         //设置新的缩略图
         imageView.image = thumbnailImage;
-        CGRect rect = CGRectMake(0.f, 0.f,
-                                 self->thumbnailImage.size.width * scrollV.zoomScale,
-                                 self->thumbnailImage.size.height * scrollV.zoomScale);
-        scrollV.contentSize = rect.size;
-        [imageView setFrame:rect];
+        [imageView setFrame:CGRectMake(0.f, 0.f, thumbnailImage.size.width, thumbnailImage.size.height)];
+        scrollV.contentSize = thumbnailImage.size;
+
+//        NSLog(@"Offset X=%.2f, Y=%.2f", offset.x, offset.y);
+        [scrollV setZoomScale:scrollV.minimumZoomScale animated:NO];
+        [scrollV setContentOffset:offset animated:NO];
     }else{
         imageView.image = nil;
         return;
@@ -277,6 +303,11 @@
     if (error){
         NSLog(@"VNRequest CompletionHandler with Error:%@", error.localizedDescription);
     }
+    for (UIView *v in self.view.subviews){
+        if ([v isKindOfClass:[AreaSubtitleTipView class]]){
+            [v removeFromSuperview];
+        }
+    }
     for (UIView *v in imageView.subviews){
         if ([v isKindOfClass:[AreaSelectButton class]]){
             [v removeFromSuperview];
@@ -285,62 +316,108 @@
     
     numberOfAreaButton = 0;
     includeSubtitleAreaButton = NO;
+    NSMutableArray <VNRecognizedText *>*resultsWithRepeated = [[NSMutableArray alloc] init];
     
-    NSArray <VNRecognizedTextObservation *> *observaters = request.results;
-    for (VNRecognizedTextObservation *item in observaters){
-        NSInteger requestAreadNum = 10;
+    for (VNRecognizedTextObservation *item in request.results){
+        NSInteger requestAreadNum = 20;
         NSArray <VNRecognizedText*> * texts = [item topCandidates:requestAreadNum];
-        if (requestAreadNum == texts.count){
-            //返回数量，与请求识别数量相同时，大概率是因为识别的语言错误
-            continue;
-        }
         for (VNRecognizedText *text in texts){
             if (text.string.length < 2){
+                //
                 continue;
             }
             if (text.confidence < 0.3){
+                //
                 continue;
             }
-            numberOfAreaButton ++;
-            NSRange range = NSMakeRange(0, text.string.length);
-            VNRectangleObservation *observation = [text boundingBoxForRange:range error:&error];
-            AreaSelectButton *button = [[AreaSelectButton alloc] initWithRectangleObservation:observation
-                                                                                     withSize:imageView.image.size
-                                                                                   withString:text.string];
-            [button addTarget:self action:@selector(selectAreaAction:) forControlEvents:UIControlEventTouchUpInside];
-            [imageView addSubview:button];
-            if (button.isSubtitle){
-                includeSubtitleAreaButton = YES;
+            [resultsWithRepeated addObject:text];
+        }
+    }
+    
+    // remove text object with same location
+    NSMutableArray <VNRecognizedText *>*resultsNoRepeat = [[NSMutableArray alloc] init];
+    NSMutableArray *existPoints = [[NSMutableArray alloc] init];
+    [resultsWithRepeated sortUsingComparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
+        //First sort by confidence
+        VNRecognizedText *text1 = obj1;
+        VNRecognizedText *text2 = obj2;
+        if (text1.confidence > text2.confidence){
+            return NSOrderedAscending;
+        }
+        if (text1.confidence < text2.confidence){
+            return NSOrderedDescending;
+        }
+        return NSOrderedSame;
+    }];
+    
+    for (VNRecognizedText *text in resultsWithRepeated){
+        error = nil;
+        NSRange range = NSMakeRange(0, text.string.length);
+        VNRectangleObservation *observation = [text boundingBoxForRange:range error:&error];
+        BOOL isExistPoint = NO;
+        for (NSValue *v in existPoints){
+            CGFloat distance = [self distancePoint:[v CGPointValue] other:observation.topLeft];
+            if (distance < 0.005){
+                isExistPoint = YES;
+                break;
             }
+        }
+        if (NO == isExistPoint){
+            [existPoints addObject:[NSValue valueWithCGPoint:observation.topLeft]];
+            [resultsNoRepeat addObject:text];
+        }else{
+            //topLeft 相同，此识别结果丢弃
+        }
+    }
+    
+    //Create Area select buttons.
+    for (VNRecognizedText *text in resultsNoRepeat){
+        NSRange range = NSMakeRange(0, text.string.length);
+        VNRectangleObservation *observation = [text boundingBoxForRange:range error:&error];
+        numberOfAreaButton ++;
+        
+//        NSLog(@"Found:%@ %.6f %.6f %.3f", text.string, observation.topLeft.x, observation.topLeft.y, text.confidence);
+        AreaSelectButton *button = [[AreaSelectButton alloc] initWithRectangleObservation:observation
+                                                                                 withSize:imageView.image.size
+                                                                               withString:text.string];
+        [button addTarget:self action:@selector(selectAreaAction:) forControlEvents:UIControlEventTouchUpInside];
+        [imageView addSubview:button];
+        if (button.isSubtitle
+            && NO == includeSubtitleAreaButton){//只需要一个Subtitle提示界面
+            includeSubtitleAreaButton = YES;
+            
+            CGPoint fouceCenter = [imageView convertPoint:button.center toView:self.view];
+            AreaSubtitleTipView *cc = [[AreaSubtitleTipView alloc] initWithCenter:fouceCenter withScale:scrollV.zoomScale];
+            [self.view addSubview:cc];
+            [cc animateStart];
         }
     }
     [self animateTipView];
     return;
 }
 
+-(CGFloat)distancePoint:(CGPoint)p1 other:(CGPoint)p2{
+    CGFloat xDist = (p2.x - p1.x);
+    CGFloat yDist = (p2.y - p1.y);
+    return sqrt((xDist * xDist) + (yDist * yDist));
+}
+
 -(void)animateTipView{
-    NSLog(@"%ld 区域按钮", numberOfAreaButton);
-    /*
-     1. 无 AreaButton 0 == numberOfAreaButton 即没有任何文字被识别到， 提示 “选择识别的语言，拖动到有字幕的视频位置”
-        1.1 sliderTouched  无需提示视频位置
-        1.2 languageSelected 无需语言选择
-     2. includeSubtitleAreaButton is True 提示 "点击缩略图中的字幕按钮，即可完成Template"
-     */
-    NSString *tipString = nil;
+    NSString *tipTitleString = @"";
+    NSString *tipTextString = @"";
     if (includeSubtitleAreaButton){
-        tipString = @" ** 点击缩略图中的字幕框, 完成模版创建 ** ";
+        tipTitleString = NSLocalizedString(@"Congratulations!", nil);
+        tipTextString = NSLocalizedString(@"** Click on the subtitle box below to complete the template creation. **", nil);
     }else{
-        if (0 == numberOfAreaButton){
-            tipString = @" ** 选择缩略图中字幕的识别语言 ** ";
+        if (languageSelected){
+            tipTitleString = NSLocalizedString(@"Without Subtitle", nil);
+            tipTextString = NSLocalizedString(@"** Drag the timeline below to change the video thumbnail, including subtitles. **", nil);
         }else{
-            if (includeSubtitleAreaButton){
-                tipString = @" ** 点击缩略图中的字幕框, 完成模版创建 ** ";
-            }else{
-                tipString = @" ** 然后拖动时间条改变缩略图内容，缩略图中要包括字幕 ** ";
-            }
+            tipTitleString = NSLocalizedString(@"NOT Found", nil);
+            tipTextString = NSLocalizedString(@"** Select the language to recognize subtitles. **", nil);
         }
     }
-    [tipView showWithString:tipString];
+    [tipView showWithTitle:tipTitleString withText:tipTextString];
     return;
 }
 

@@ -34,7 +34,7 @@ UIColor * _Nonnull templateColor;
         templateColor = [UIHans colorFromHEXString:@"B3FCC8"];
         self.backgroundColor = [UIColor whiteColor];
         if (0 == templates.count){
-            OCRSetting *demoSetting = [OCRSetting wanruSetting];
+            OCRSetting *demoSetting = [OCRSetting default_1Setting];
             OCRSetting *o = [OCRSubtitleManage.shared createOCRSetting];
             o.image = demoSetting.image;
             o.videoWidth = demoSetting.videoWidth;
@@ -93,9 +93,15 @@ UIColor * _Nonnull templateColor;
 
 -(void)setFrame:(CGRect)frame{
     [super setFrame:frame];
-    blockEdge = UIEdgeInsetsMake(50.f, 2.f, 20.f, 2.f);
-    blockSize = CGSizeMake(125.f, 140.f);
-    minimumLineSpacing = 13.f;
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        blockEdge = UIEdgeInsetsMake(50.f, 2.f, 20.f, 2.f);
+        blockSize = CGSizeMake(125.f, 140.f);
+        minimumLineSpacing = 13.f;
+    }else{
+        blockEdge = UIEdgeInsetsMake(40.f, 2.f, 20.f, 2.f);
+        blockSize = CGSizeMake(110.f, 120.f);
+        minimumLineSpacing = 13.f;
+    }
     return;
 }
 

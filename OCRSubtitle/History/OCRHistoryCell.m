@@ -13,7 +13,6 @@
 @interface OCRHistoryCell(){
     CreateOCRView *createView;
     ExistOCRView *itemView;
-    
     UIHansButton *removeButton;
 }
 @end
@@ -35,6 +34,13 @@
 
 -(void)checkItems{
     self.backgroundColor = [UIColor clearColor];
+    self.layer.masksToBounds = NO;
+    self.layer.cornerRadius = 6.f;
+    self.layer.shadowColor = [UIHans gray].CGColor;
+    self.layer.shadowOffset = CGSizeMake(2.f, 2.f);
+    self.layer.shadowRadius = 2.f;
+    self.layer.shadowOpacity = 0.5f;
+
     if (nil == createView){
         createView = [[CreateOCRView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.frame.size.width, self.frame.size.height)];
         [self addSubview:createView];

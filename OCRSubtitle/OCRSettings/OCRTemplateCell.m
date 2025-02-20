@@ -31,16 +31,18 @@
     if (nil == backImageView){
         self.backgroundColor = templateColor;
         self.layer.cornerRadius = 6.f;
-        self.layer.masksToBounds = YES;
+        self.layer.masksToBounds = NO;
         self.layer.shadowColor = [UIHans gray].CGColor;
         self.layer.shadowOffset = CGSizeMake(2.f, 2.f);
+        self.layer.shadowRadius = 2.f;
+        self.layer.shadowOpacity = 1.f;
         float y = 0.f;
         
         backImageView = [[UIImageView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.frame.size.width, self.frame.size.height-32.f)];
         backImageView.contentMode = UIViewContentModeScaleAspectFit;
         backImageView.backgroundColor = [UIHans lightestGray];
         backImageView.layer.masksToBounds = YES;
-        backImageView.layer.cornerRadius = 3.f;
+        backImageView.layer.cornerRadius = 4.f;
         [self addSubview:backImageView];
         UILongPressGestureRecognizer *l = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressed:)];
         [self addGestureRecognizer:l];
@@ -79,6 +81,7 @@
         
         infoButton = [UIButton buttonWithType:UIButtonTypeInfoLight];
         [infoButton setFrame:CGRectMake(0.f, 0.f, 30.f, 30.f)];
+        infoButton.transform = CGAffineTransformMakeScale(0.7, 0.7);
         [infoButton addTarget:self action:@selector(infoButtonAction) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:infoButton];
         
@@ -93,6 +96,25 @@
         [self addSubview:removeButton];
     }
     return;
+}
+
+-(void)clickAnimated{
+    [UIView animateWithDuration:0.3 animations:^{
+        self.backgroundColor = [UIHans lightestGray];
+        self.layer.borderWidth = 3.f;
+        self.layer.borderColor = templateColor.CGColor;
+    } completion:^(BOOL finished) {
+        self.backgroundColor = templateColor;
+        self.layer.borderWidth = 0.f;
+    }];
+    return;
+}
+
+-(void)setHighlighted:(BOOL)highlighted{
+    [super setHighlighted:highlighted];
+    if (highlighted){
+        [self clickAnimated];
+    }
 }
 
 -(void)removeButtonAction{

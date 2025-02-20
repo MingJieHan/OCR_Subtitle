@@ -46,6 +46,9 @@ static OCRManageSegment *staticOCRManageSegment;
     return YES;
 }
 
+-(NSUInteger)numOfSegments{
+    return segments.count;
+}
 -(void)add:(OCRSegment *)segment withSubtitleImage:(CGImageRef)subtitleCGImage withSource:(CGImageRef)subtitleSourceCGImage{
     pthread_mutex_lock(&mutex);
     [segment buildObservationWithCGImage:subtitleCGImage

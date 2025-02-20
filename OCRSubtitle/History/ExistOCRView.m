@@ -21,18 +21,19 @@
 -(id)initWithFrame:(CGRect)frame{
     self = [super initWithFrame:frame];
     if (self){
-        self.backgroundColor = [UIColor whiteColor];
+        self.backgroundColor = [UIHans colorFromHEXString:@"E5E5E5"];
         self.layer.masksToBounds = YES;
         self.layer.cornerRadius = 6.f;
+        
         float y = 0.f;
         
         bView = [[UIImageView alloc] initWithFrame:CGRectMake(3.f, 2.f, self.frame.size.width-6.f, self.frame.size.height * 0.75)];
+        bView.backgroundColor = [UIColor clearColor];
         bView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
         bView.layer.cornerRadius = 4.f;
         bView.layer.masksToBounds = YES;
         bView.layer.borderColor = [UIHans colorFromHEXString:@"E5E5E5"].CGColor;
         bView.layer.borderWidth = 2.f;
-        bView.backgroundColor = [UIColor clearColor];
         bView.contentMode = UIViewContentModeScaleAspectFit;
         bView.userInteractionEnabled = YES;
         [self addSubview:bView];
@@ -54,6 +55,10 @@
         completedLabel.textColor = [UIHans gray];
         [self addSubview:completedLabel];
         
+        
+        UIPinchGestureRecognizer *ges = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(showGesture:)];
+        [self addGestureRecognizer:ges];
+        
         y = CGRectGetMaxY(completedLabel.frame);
         usageLabel = [[UILabel alloc] initWithFrame:CGRectMake(5.f, y, self.frame.size.width-10.f, 18.f)];
         usageLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12.f];
@@ -61,6 +66,17 @@
 //        [self addSubview:usageLabel];
     }
     return self;
+}
+
+-(void)showGesture:(UIPinchGestureRecognizer *)pinch{
+    if (pinch.numberOfTouches == 2){
+        if (pinch.scale > 1.f){
+//            NSLog(@"放大动作%.2f", pinch.scale);
+        }else{
+            //缩小动作
+        }
+    }
+    return;
 }
 
 +(NSString *)stringWithDate:(NSDate *)date withStyle:(NSDateFormatterStyle)style{
@@ -90,7 +106,7 @@
         self.layer.borderWidth = 3.f;
         self.layer.borderColor = [UIHans colorFromHEXString:@"FD8206"].CGColor;
     } completion:^(BOOL finished) {
-        self.backgroundColor = [UIColor whiteColor];
+        self.backgroundColor = [UIHans colorFromHEXString:@"E5E5E5"];
         self.layer.borderWidth = 0.f;
     }];
     return;

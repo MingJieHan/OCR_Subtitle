@@ -85,8 +85,8 @@ static OCRSubtitleManage *staticOCRSubtitleManage;
 }
 
 -(void)initSettings{
-    [OCRSetting wanruSetting];
-    [OCRSetting demo1Setting];
+    [OCRSetting default_1Setting];
+    [OCRSetting default_2Setting];
     return;
 }
 -(NSMutableArray *)existSettings{

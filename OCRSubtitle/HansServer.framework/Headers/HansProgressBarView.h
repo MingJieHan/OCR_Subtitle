@@ -11,9 +11,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface HansProgressBarView:UIView
 @property (nonatomic) UIColor *completedColor;
 @property (nonatomic) UIColor *unCompletedColor;
-@property (nonatomic) UIColor *boardColor;
+@property (nonatomic) UIColor *borderColor;
 @property (nonatomic) UIFont *progressFont;
-@property (nonatomic) float progress;
+@property (nonatomic) float progress;       //0.f -> 1.f
 
 
 -(id)init NS_UNAVAILABLE;

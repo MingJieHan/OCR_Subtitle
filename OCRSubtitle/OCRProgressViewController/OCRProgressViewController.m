@@ -9,15 +9,18 @@
 #import <HansServer/HansServer.h>
 #import "HansBorderLabel.h"
 #import "OCRScanningView.h"
+#import "HansBorderLabel.h"
+#define SUBTITLE_LABEL_TAG 5
+
 @interface OCRProgressViewController (){
     UIImageView *currentImageView;
-    UIImageView *resultImageView;
     HansProgressBarView *progressView;
-    UILabel *titleLabel;
+    NSTimer *animateControlTimer;
+    HansBorderLabel *titleLabel;
     NSDate *startDate;
     UILabel *usedTimeLabel;
     UILabel *requiredTimeLabel;
-    UILabel *noticeLabel;
+    HansBorderLabel *noticeLabel;
     CGRect scanningRect;
     
     OCRScanningView *scanningView;
@@ -25,12 +28,142 @@
 @end
 
 @implementation OCRProgressViewController
+@synthesize storageImageView;
 @synthesize progress;
 @synthesize image;
 @synthesize gottedString;
 @synthesize gottedStringColor,gottedStringBorderColor,gottedStringBorderWidth;
 @synthesize passTopRate,heightRate;
 
+#pragma mark - System
+-(id)init{
+    self = [super init];
+    if (self){
+        self.modalPresentationStyle = UIModalPresentationOverFullScreen;
+        self.view.backgroundColor = [UIColor whiteColor];
+        float y = 0.f;
+
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            currentImageView = [[UIImageView alloc] initWithFrame:CGRectMake(60.f, 70.f, self.view.frame.size.width-120.f, self.view.frame.size.height-190.f)];
+        }else{
+            currentImageView = [[UIImageView alloc] initWithFrame:CGRectMake(10.f, 100.f, self.view.frame.size.width-20.f, self.view.frame.size.height-250.f)];
+        }
+        currentImageView.backgroundColor= [UIHans colorFromHEXString:@"F5F5F5"];
+        currentImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
+        currentImageView.layer.masksToBounds = YES;
+        currentImageView.layer.cornerRadius = 8.f;
+        currentImageView.contentMode = UIViewContentModeScaleAspectFit;
+        currentImageView.backgroundColor = [UIColor clearColor];
+        [self.view addSubview:currentImageView];
+        
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            titleLabel = [[HansBorderLabel alloc] initWithFrame:CGRectMake(10.f, 40.f, self.view.frame.size.width-20.f, 40.f)];
+        }else{
+            titleLabel = [[HansBorderLabel alloc] initWithFrame:CGRectMake(10.f, 80.f, self.view.frame.size.width-20.f, 40.f)];
+        }
+        titleLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+        titleLabel.textAlignment = NSTextAlignmentCenter;
+        titleLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:24.f];
+        titleLabel.text = NSLocalizedString(@"Scanning video and OCR subtitle.", nil);
+        titleLabel.fontColor = [UIHans colorFromHEXString:@"FFDE1F"];
+        titleLabel.borderColor = [UIHans gray];
+        titleLabel.layer.shadowColor = [UIHans gray].CGColor;
+        titleLabel.layer.shadowOffset = CGSizeMake(1.f, 2.f);
+        titleLabel.layer.shadowRadius = 0.2f;
+        titleLabel.layer.shadowOpacity = 0.7f;
+        [self.view addSubview:titleLabel];
+        
+        y = CGRectGetMaxY(currentImageView.frame)+1.f;
+        progressView = [[HansProgressBarView alloc] initWithFrame:CGRectMake(10.f, y, self.view.frame.size.width-20.f, 40.f)];
+        progressView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleBottomMargin;
+        [self.view addSubview:progressView];
+        
+        y = CGRectGetMaxY(progressView.frame) + 5.f;
+        usedTimeLabel = [[UILabel alloc] initWithFrame:CGRectMake(20.f, y, 300.f, 20.f)];
+        usedTimeLabel.autoresizingMask = UIViewAutoresizingFlexibleRightMargin|UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleBottomMargin;
+        usedTimeLabel.textAlignment = NSTextAlignmentLeft;
+        usedTimeLabel.text = @"--:--";
+        usedTimeLabel.font = [UIFont fontWithName:@"Menlo" size:18.f];
+        usedTimeLabel.backgroundColor = [UIColor clearColor];
+        [self.view addSubview:usedTimeLabel];
+        
+        requiredTimeLabel = [[UILabel alloc] initWithFrame:CGRectMake(self.view.frame.size.width-320.f, y, 300.f, 20.f)];
+        requiredTimeLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleBottomMargin;
+        requiredTimeLabel.textAlignment = NSTextAlignmentRight;
+        requiredTimeLabel.text = @"--:--";
+        requiredTimeLabel.font = usedTimeLabel.font;
+        requiredTimeLabel.backgroundColor = [UIColor clearColor];
+        [self.view addSubview:requiredTimeLabel];
+        
+        y = CGRectGetMaxY(progressView.frame) + 8.f;
+        noticeLabel = [[HansBorderLabel alloc] initWithFrame:CGRectMake(10.f, self.view.frame.size.height-60.f, self.view.frame.size.width-20.f, 40.f)];
+        noticeLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin;
+        noticeLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:14.f];
+        noticeLabel.text = NSLocalizedString(@"Do not close this page or lock the screen.",nil);
+        noticeLabel.textAlignment = NSTextAlignmentCenter;
+        noticeLabel.fontColor = [UIHans red];
+        noticeLabel.borderColor = [UIHans gray];
+        [self.view addSubview:noticeLabel];
+
+        scanningView = [[OCRScanningView alloc] init];
+        [self.view addSubview:scanningView];
+
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            storageImageView = [[UIImageView alloc] initWithFrame:CGRectMake(30.f, 80.f, 120.f, 120.f)];
+        }else{
+            storageImageView = [[UIImageView alloc] initWithFrame:CGRectMake(30.f, 80.f, 100.f, 100.f)];
+        }
+        storageImageView.autoresizingMask = UIViewAutoresizingNone;
+        storageImageView.layer.masksToBounds = YES;
+        storageImageView.layer.cornerRadius = 5.f;
+        storageImageView.contentMode = UIViewContentModeScaleAspectFit;
+        storageImageView.backgroundColor = [UIHans colorFromHEXString:@"E5E5E5"];
+        storageImageView.userInteractionEnabled = YES;
+        storageImageView.image = [[UIImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"storage" ofType:@"png"]];
+        [self.view addSubview:storageImageView];
+        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureRecognizer:)];
+        [storageImageView addGestureRecognizer:pan];
+    }
+    return self;
+}
+
+-(void)viewWillDisappear:(BOOL)animated{
+    [animateControlTimer invalidate];
+    animateControlTimer = nil;
+    [super viewWillDisappear:animated];
+}
+
+-(void)viewDidAppear:(BOOL)animated{
+    [super viewDidAppear:animated];
+    startDate = [NSDate date];
+    animateControlTimer = [NSTimer scheduledTimerWithTimeInterval:2.6f repeats:YES block:^(NSTimer * _Nonnull timer) {
+        [self animating];
+    }];
+    [animateControlTimer fire];
+    return;
+}
+
+-(void)viewDidLayoutSubviews{
+    [super viewDidLayoutSubviews];
+    BOOL needMove = NO;
+    CGPoint targetCenter = storageImageView.center;
+    if (targetCenter.x > self.view.frame.size.width - storageImageView.frame.size.width/2.f){
+        needMove = YES;
+        targetCenter.x  = self.view.frame.size.width - storageImageView.frame.size.width/2.f;
+    }
+    if (targetCenter.y > self.view.frame.size.height - storageImageView.frame.size.height/2.f){
+        needMove = YES;
+        targetCenter.y = self.view.frame.size.height - storageImageView.frame.size.height/2.f;
+    }
+    if (needMove){
+        [UIView animateWithDuration:0.2 animations:^{
+            [self->storageImageView setCenter:targetCenter];
+        }];
+    }
+    return;
+}
+
+#pragma mark -My
 -(void)setGottedString:(NSString *)_gottedString{
     if ([gottedString isEqualToString:_gottedString]){
         return;
@@ -38,6 +171,7 @@
     gottedString = _gottedString;
     dispatch_async(dispatch_get_main_queue(), ^{
         HansBorderLabel *gottedStringLabel = [[HansBorderLabel alloc] initWithFrame:self->scanningRect];
+        gottedStringLabel.tag = SUBTITLE_LABEL_TAG;
         if (nil == self->gottedStringBorderColor){
             gottedStringLabel.borderColor = [UIColor blackColor];
         }else{
@@ -50,13 +184,21 @@
         }
         gottedStringLabel.borderWidth = self->gottedStringBorderWidth;
         gottedStringLabel.text = self->gottedString;
-        [UIView animateWithDuration:0.3 animations:^{
+        
+        [UIView animateWithDuration:0.3
+                              delay:0.f
+                            options:UIViewAnimationOptionCurveLinear|UIViewAnimationOptionAllowUserInteraction
+                         animations:^{
             [self.view addSubview:gottedStringLabel];
         } completion:^(BOOL finished) {
-            [UIView animateWithDuration:1.5 delay:0.3f options:UIViewAnimationOptionCurveLinear animations:^{
+            [UIView animateWithDuration:1.5
+                                  delay:0.3f
+                                options:UIViewAnimationOptionCurveLinear|UIViewAnimationOptionAllowUserInteraction
+                             animations:^{
                 gottedStringLabel.transform = CGAffineTransformMakeScale(0.1, 0.1);
-                [gottedStringLabel setCenter:self->resultImageView.center];
+                [gottedStringLabel setCenter:self->storageImageView.center];
             } completion:^(BOOL finished) {
+                [self completedAnimatedAnLabel];
                 [gottedStringLabel removeFromSuperview];
             }];
         }];
@@ -118,72 +260,76 @@
     return;
 }
 
--(id)init{
-    self = [super init];
-    if (self){
-        self.modalPresentationStyle = UIModalPresentationOverFullScreen;
-        self.view.backgroundColor = [UIColor whiteColor];
-
-        currentImageView = [[UIImageView alloc] initWithFrame:CGRectMake(10.f, 10.f, self.view.frame.size.width-20.f, self.view.frame.size.height-20.f)];
-        currentImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-        currentImageView.layer.masksToBounds = YES;
-        currentImageView.layer.cornerRadius = 8.f;
-        currentImageView.contentMode = UIViewContentModeScaleAspectFit;
-        currentImageView.backgroundColor = [UIColor clearColor];
-        [self.view addSubview:currentImageView];
-        
-        progressView = [[HansProgressBarView alloc] initWithFrame:CGRectMake(10.f, (self.view.frame.size.height-40.f)/2.f, self.view.frame.size.width-20.f, 40.f)];
-        progressView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleBottomMargin;
-        progressView.backgroundColor = [UIColor redColor];
-        [self.view addSubview:progressView];
-        
-        noticeLabel = [[UILabel alloc] initWithFrame:CGRectMake(10.f, self.view.frame.size.height-60.f, self.view.frame.size.width-20.f, 40.f)];
-        noticeLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin;
-        noticeLabel.text = @"OCR video ... Do not close this page or lock the screen.";
-        noticeLabel.textAlignment = NSTextAlignmentCenter;
-        [self.view addSubview:noticeLabel];
-        
-        titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(10.f, 40.f, self.view.frame.size.width-20.f, 40.f)];
-        titleLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-        titleLabel.textAlignment = NSTextAlignmentCenter;
-        titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:24.f];
-        titleLabel.text = @"Scanning video and OCR text.";
-        titleLabel.textColor = [UIColor blackColor];
-        [self.view addSubview:titleLabel];
-        
-        float y = CGRectGetMaxY(progressView.frame) + 5.f;
-        usedTimeLabel = [[UILabel alloc] initWithFrame:CGRectMake(20.f, y, 300.f, 20.f)];
-        usedTimeLabel.autoresizingMask = UIViewAutoresizingFlexibleRightMargin|UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleBottomMargin;
-        usedTimeLabel.textAlignment = NSTextAlignmentLeft;
-        usedTimeLabel.text = @"--:--";
-        usedTimeLabel.backgroundColor = [UIColor clearColor];
-        [self.view addSubview:usedTimeLabel];
-        
-        requiredTimeLabel = [[UILabel alloc] initWithFrame:CGRectMake(self.view.frame.size.width-320.f, y, 300.f, 20.f)];
-        requiredTimeLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleBottomMargin;
-        requiredTimeLabel.textAlignment = NSTextAlignmentRight;
-        requiredTimeLabel.text = @"--:--";
-        requiredTimeLabel.backgroundColor = [UIColor clearColor];
-        [self.view addSubview:requiredTimeLabel];
-        
-        resultImageView = [[UIImageView alloc] initWithFrame:CGRectMake(10.f, self.view.frame.size.height-50.f, 40.f, 40.f)];
-        resultImageView.autoresizingMask = UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleRightMargin;
-        resultImageView.layer.masksToBounds = YES;
-        resultImageView.layer.cornerRadius = 2.f;
-        resultImageView.contentMode = UIViewContentModeScaleAspectFit;
-        resultImageView.backgroundColor = [UIColor blackColor];
-        [self.view addSubview:resultImageView];
-        
-        scanningView = [[OCRScanningView alloc] init];
-        [self.view addSubview:scanningView];
-    }
-    return self;
+-(void)completedAnimatedAnLabel{
+    //TODO 这里应加入存储的表达动画，在 storageImageView 上
+//    NSLog(@"An label completed.");
+//    storageImageView
+    return;
 }
 
--(void)viewDidAppear:(BOOL)animated{
-    [super viewDidAppear:animated];
-    startDate = [NSDate date];
+-(void)panGestureRecognizer:(UIPanGestureRecognizer *)recognizer{
+    CGPoint translation = [recognizer translationInView:storageImageView.superview];
+    CGPoint targetCenter = CGPointMake(recognizer.view.center.x + translation.x,
+                                     recognizer.view.center.y + translation.y);
+    if (targetCenter.x < storageImageView.frame.size.width/2.f){
+        targetCenter.x = storageImageView.frame.size.width/2.f;
+    }
+    if (targetCenter.x > self.view.frame.size.width-storageImageView.frame.size.width/2.f){
+        targetCenter.x = self.view.frame.size.width-storageImageView.frame.size.width/2.f;
+    }
+    if (targetCenter.y < storageImageView.frame.size.height/2.f){
+        targetCenter.y = storageImageView.frame.size.height/2.f;
+    }
+    if (targetCenter.y > self.view.frame.size.height - storageImageView.frame.size.height/2.f){
+        targetCenter.y = self.view.frame.size.height-storageImageView.frame.size.height/2.f;
+    }
+    storageImageView.center = targetCenter;
+    for (UIView * v in self.view.subviews){
+        if ([v isKindOfClass:[HansBorderLabel class]] && v.tag == SUBTITLE_LABEL_TAG){
+            HansBorderLabel *label = (HansBorderLabel *)v;
+//            [label setNeedsLayout];
+//            [self.view addSubview:label];
+//            [self.view.layer addSublayer:label.layer];
+
+            [label.layer removeAllAnimations];
+            //拖动接收器位置后，正在飞行的Label不能改变到新的位置，代码未完成。
+//            NSLog(@"%@", label.layer.animationKeys);
+//            NSLog(@"Label %@ x:%.2f, y:%.2f", label.text, label.center.x, label.center.y);
+            
+//            [UIView animateWithDuration:1.2
+//                                  delay:0.f
+//                                options:UIViewAnimationOptionCurveLinear|UIViewAnimationOptionAllowUserInteraction
+//                             animations:^{
+//                label.transform = CGAffineTransformMakeScale(0.1, 0.1);
+//                [label setCenter:self->storageImageView.center];
+//            } completion:^(BOOL finished) {
+//                [self completedAnimatedAnLabel];
+//                [label removeFromSuperview];
+//            }];
+        }
+    }
+    [recognizer setTranslation:CGPointMake(0.f, 0.f) inView:storageImageView.superview];
     return;
+}
+
+-(void)animating{
+    [UIView animateWithDuration:1.2f delay:0.f options:UIViewAnimationOptionCurveEaseIn animations:^{
+        self->titleLabel.fontColor = [UIHans red];
+        self->titleLabel.transform = CGAffineTransformMakeScale(1.5, 1.5);
+        self->noticeLabel.fontColor = [UIHans redHighlighted];
+        self->noticeLabel.transform = CGAffineTransformMakeScale(1.5, 1.5);
+    } completion:^(BOOL finished) {
+    }];
+    [NSTimer scheduledTimerWithTimeInterval:1.3f repeats:NO block:^(NSTimer * _Nonnull timer) {
+        [UIView animateWithDuration:1.2f delay:0.f options:UIViewAnimationOptionCurveEaseIn animations:^{
+            self->titleLabel.fontColor = [UIHans colorFromHEXString:@"FFDE1F"];
+            self->titleLabel.transform = CGAffineTransformMakeScale(1.f, 1.f);
+            self->noticeLabel.fontColor = [UIHans red];
+            self->noticeLabel.transform = CGAffineTransformMakeScale(1.f, 1.f);
+        } completion:^(BOOL finished) {
+                
+        }];
+    }];
 }
 
 @end

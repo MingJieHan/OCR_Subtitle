@@ -22,12 +22,14 @@ static NSString * const reuseIdentifier = @"OCRHistoryIdentifier";
 
 @implementation OCRHistoryCollectionView
 @synthesize shareHandler, openHandler;
+@synthesize firstHistoryCellRect;
 
 -(id)initWithFrame:(CGRect)frame{
     UICollectionViewFlowLayout *collectionFlowLayout = [[UICollectionViewFlowLayout alloc] init];
     collectionFlowLayout.scrollDirection = UICollectionViewScrollDirectionVertical;
     self = [super initWithFrame:frame collectionViewLayout:collectionFlowLayout];
     if (self){
+        self.backgroundColor = [UIColor whiteColor];
         historys = [OCRSubtitleManage.shared existHistorys];
         self.dataSource = self;
         self.delegate = self;
@@ -41,7 +43,7 @@ static NSString * const reuseIdentifier = @"OCRHistoryIdentifier";
     float targetBlockWidth = 0.f;
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
         //iPad
-        blockEdge = UIEdgeInsetsMake(0.f, 24.f, 0.f, 24.f);
+        blockEdge = UIEdgeInsetsMake(20.f, 24.f, 20.f, 24.f);
         minimumInteritemSpacing = 12.f;
         float contentWidth = self.frame.size.width - blockEdge.left - blockEdge.right;
         int row = (int)contentWidth/(int)(minimumInteritemSpacing + 220.f);
@@ -49,14 +51,22 @@ static NSString * const reuseIdentifier = @"OCRHistoryIdentifier";
         targetBlockWidth = availableWith/row;
     }else{
         //iPhone
-        blockEdge = UIEdgeInsetsMake(0.f, 2.f, 0.f, 2.f);;
-        minimumInteritemSpacing = 0.f;
-        targetBlockWidth = (self.frame.size.width-8.f)/2.f;
+        blockEdge = UIEdgeInsetsMake(20.f, 2.f, 20.f, 2.f);;
+        minimumInteritemSpacing = 3.f;
+        targetBlockWidth = (self.frame.size.width - 12.f)/2.f;
     }
-    minimumLineSpacing = 40.f;
+    minimumLineSpacing = 20.f;
     if (blockSize.width != targetBlockWidth){
         blockSize = CGSizeMake(targetBlockWidth, 200.f);
         [self reloadData];
+    }
+}
+
+-(void)reloadData{
+    [super reloadData];
+    if (self->historys.count > 0){
+        OCRHistoryCell *cell = [self cellForItemAtIndexPath:[NSIndexPath indexPathForRow:1 inSection:0]];
+        self->firstHistoryCellRect = [cell convertRect:cell.frame toView:self];
     }
 }
 
@@ -78,15 +88,16 @@ static NSString * const reuseIdentifier = @"OCRHistoryIdentifier";
     return;
 }
 
--(void)addObject:(OCRHistory *)anOCRHistory{
+-(void)insertAnHistory:(OCRHistory *)anOCRHistory withCompleted:(InsertHistory_Completed)completed{
     [self performBatchUpdates:^{
         [historys insertObject:anOCRHistory atIndex:0];
         
-        //The first cell is Add
+        //The first cell is Add view, so the second cell is.
         NSIndexPath *index = [NSIndexPath indexPathForRow:1 inSection:0];
         [self insertItemsAtIndexPaths:@[index]];
     } completion:^(BOOL finished) {
-        
+        OCRHistoryCell *cell = [self cellForItemAtIndexPath:[NSIndexPath indexPathForRow:1 inSection:0]];
+        completed(cell);
     }];
     return;
 }

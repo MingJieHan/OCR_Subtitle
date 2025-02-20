@@ -67,9 +67,11 @@
     return res;
 }
 
-+(id)wanruSetting{
++(id)default_1Setting{
     OCRSetting *setting = [OCRSubtitleManage.shared createOCRSetting];
-    setting.name = @"Wanru";
+    setting.name = @"Default_1";
+    NSString *file = [NSBundle.mainBundle pathForResource:@"default_1" ofType:@"PNG"];
+    setting.image = [[UIImage alloc] initWithContentsOfFile:file];
     setting.videoWidth = @1920;
     setting.videoHeight = @1080;
     setting.rate = 10.f;
@@ -82,9 +84,11 @@
     return setting;
 }
 
-+(id)demo1Setting{
++(id)default_2Setting{
     OCRSetting *setting = [OCRSubtitleManage.shared createOCRSetting];
-    setting.name = @"Demo";
+    setting.name = @"Default_2";
+    NSString *file = [NSBundle.mainBundle pathForResource:@"default_2" ofType:@"PNG"];
+    setting.image = [[UIImage alloc] initWithContentsOfFile:file];
     setting.videoWidth = @720;
     setting.videoHeight = @1280;
     setting.rate = 10.f;

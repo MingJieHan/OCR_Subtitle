@@ -23,7 +23,7 @@
 
 #define MAXIMUM_THREAD 4    //How many thread for get Text from image.
 
-@interface ViewController ()<UIDocumentPickerDelegate,UIDocumentBrowserViewControllerDelegate>{
+@interface ViewController ()<UIDocumentPickerDelegate,UIDocumentBrowserViewControllerDelegate,UIDocumentInteractionControllerDelegate>{
     NSDate *startDate;
     NSURL *videoURL;
     OCRProgressViewController *progressVC;
@@ -45,6 +45,7 @@
     UIImage *thumbnailCGImage;
     
     NSArray <OCRSetting *>*availableTemplatesForTheVideo;
+    float templateViewWidth;
 }
 
 @end
@@ -59,9 +60,12 @@
     
     ViewController * __strong strongSelf = self;
     float y = 400.f;
-    
-    templateView = [[OCRTemplateCollectionView alloc] initWithFrame:CGRectMake(self.view.frame.size.width-130.f, 20.f, 130.f, self.view.frame.size.height-60.f)];
-    templateView.autoresizingMask = UIViewAutoresizingFlexibleHeight;
+    templateViewWidth = 130.f;
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        templateViewWidth = 145.f;
+    }
+    templateView = [[OCRTemplateCollectionView alloc] initWithFrame:CGRectMake(self.view.frame.size.width-templateViewWidth, 60.f, templateViewWidth, self.view.frame.size.height-100.f)];
+    templateView.autoresizingMask = UIViewAutoresizingFlexibleHeight|UIViewAutoresizingFlexibleLeftMargin;
     templateView.openHandler = ^(OCRSetting * _Nonnull selectedSetting) {
         [strongSelf hiddenTemplates:nil];
         self->setting = selectedSetting;
@@ -72,9 +76,21 @@
         [strongSelf showTemplateDetailWithSetting:selectedSetting];
     };
     [self.view addSubview:templateView];
+    UISwipeGestureRecognizer *rightSwipe1 = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(hiddenTemplates:)];
+    rightSwipe1.direction = UISwipeGestureRecognizerDirectionRight;
+    [templateView addGestureRecognizer:rightSwipe1];
+    
+    UIView *separateView = [[UIView alloc] initWithFrame:CGRectMake(self.view.frame.size.width-templateViewWidth, 60.f, 2.f, self.view.frame.size.height-120.f)];
+    separateView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleHeight;
+    separateView.backgroundColor = templateColor;
+    separateView.layer.shadowColor = templateColor.CGColor;
+    separateView.layer.shadowOffset = CGSizeMake(2.f, 1.f);
+    separateView.layer.shadowRadius = 2.f;
+    separateView.layer.shadowOpacity = 0.4f;
+    [self.view addSubview:separateView];
     
     y += 10.f;
-    historyView = [[OCRHistoryCollectionView alloc] initWithFrame:CGRectMake(0.f, 20.f, self.view.frame.size.width, self.view.frame.size.height-60.f)];
+    historyView = [[OCRHistoryCollectionView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.view.frame.size.width, self.view.frame.size.height-40.f)];
     historyView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
     historyView.shareHandler = ^(OCRHistory * _Nonnull history) {
         [strongSelf hiddenTemplates:nil];
@@ -98,12 +114,21 @@
     [self.view addSubview:historyView];
     
     verLabel = [[UILabel alloc] initWithFrame:CGRectMake(0.f, self.view.frame.size.height-40.f, self.view.frame.size.width, 30.f)];
+    verLabel.backgroundColor = [UIColor clearColor];
+    verLabel.textColor = [UIHans gray];
     verLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin;
-    verLabel.font = [UIFont fontWithName:@"PingFangSC-Light" size:12.f];
+    verLabel.font = [UIFont fontWithName:@"PingFangSC-Light" size:10.f];
     verLabel.textAlignment = NSTextAlignmentCenter;
-    verLabel.text = [NSString stringWithFormat:@"OCR Subtitle version:%@ build:%@", UIHans.appVersion, UIHans.appBuildVersion];
+    verLabel.text = [NSString stringWithFormat:@"OCR Subtitle Version:%@ Build:%@", UIHans.appVersion, UIHans.appBuildVersion];
     [self.view addSubview:verLabel];
-    
+
+    y = CGRectGetMaxY(historyView.frame) - 3.f;
+    UIImageView *shadowView = [[UIImageView alloc] initWithFrame:CGRectMake(0.f, y, self.view.frame.size.width, 4.f)];
+    shadowView.backgroundColor = [UIColor clearColor];
+    shadowView.image = [[UIImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"shadow" ofType:@"png"]];
+    shadowView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleBottomMargin;
+    [self.view addSubview:shadowView];
+
 //    y = CGRectGetMaxY(debugButton.frame)+20.f;
 //    UILabel *l = [[UILabel alloc] initWithFrame:CGRectMake(10.f, y, self.view.frame.size.width-20.f, self.view.frame.size.height-y-40.f)];
 //    l.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
@@ -117,6 +142,7 @@
 //    }
 }
 
+OCRHistoryCell *openingCell;
 -(void)openExistOCRHistory:(OCRHistoryCell * _Nonnull)historyCell{
     NSString *fullPathFile = [historyCell.item reWriteSRTInfo];
     UIView *thumbnail = [historyCell snapshotViewAfterScreenUpdates:NO];
@@ -129,19 +155,16 @@
     } completion:^(BOOL finished) {
         [thumbnail removeFromSuperview];
     }];
-    
+    openingCell = historyCell;
     if (fullPathFile){
-        [self preViewFile:fullPathFile];
+        UIDocumentInteractionController *b = [UIDocumentInteractionController interactionControllerWithURL:[NSURL fileURLWithPath:fullPathFile]];
+        if (nil == b){
+            NSLog(@"UIDocumentInteractionController init failed.");
+            return;
+        }
+        b.delegate = self;
+        [b presentPreviewAnimated:YES];
     }
-}
-
--(void)preViewFile:(NSString *)file{
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:file]){
-        NSLog(@"File:%@ NOT FOUND.", file);
-        return;
-    }
-    [UIHans alertPreviewWithURL:[NSURL fileURLWithPath:file]];
-    return;
 }
 
 -(void)moreActionWith:(OCRHistory *)anHistory{
@@ -188,10 +211,12 @@ UIDocumentBrowserViewController *documentBrowserVC;
     types = utTypes;
     documentBrowserVC = [[UIDocumentBrowserViewController alloc] initForOpeningContentTypes:types];
     if (nil == setting){
-        documentBrowserVC.title = @"Select a video for scan subtitles.";
+        documentBrowserVC.title = NSLocalizedString(@"Select a video for scan subtitles.", nil);
     }else{
-        documentBrowserVC.title = [NSString stringWithFormat:@"Video for:%@ %dx%d", setting.name,
-                                   [setting.videoWidth intValue],[setting.videoHeight intValue]];
+        documentBrowserVC.title = [NSString stringWithFormat:NSLocalizedString(@"Select video dimensions %dx%d, Template:%@.",nil),
+                                   [setting.videoWidth intValue],
+                                   [setting.videoHeight intValue],
+                                   setting.name];
     }
     documentBrowserVC.allowsPickingMultipleItems = NO;
     documentBrowserVC.allowsDocumentCreation = NO;
@@ -224,24 +249,29 @@ UIDocumentBrowserViewController *documentBrowserVC;
     
     availableTemplatesForTheVideo = [templateView availableSettingForVideo:videoURL];
     if (nil == availableTemplatesForTheVideo || 0 == availableTemplatesForTheVideo.count){
-        UIAlertController *v = [UIAlertController alertControllerWithTitle:@"NOT FOUND!" message:@"Not found availabel template for this video." preferredStyle:UIAlertControllerStyleAlert];
-        UIAlertAction *create = [UIAlertAction actionWithTitle:@"Create Template" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        UIAlertController *v = [UIAlertController alertControllerWithTitle:NSLocalizedString(@"No Available Template",nil)
+                                                                   message:NSLocalizedString(@"Video dimsnsion must same with template.",nil)
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertAction *create = [UIAlertAction actionWithTitle:NSLocalizedString(@"Create Template",nil)
+                                                         style:UIAlertActionStyleDestructive
+                                                       handler:^(UIAlertAction * _Nonnull action) {
             [self createTemplateWithVideo:self->videoURL];
         }];
         [v addAction:create];
-        UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil];
+        UIAlertAction *cancel = [UIAlertAction actionWithTitle:NSLocalizedString(@"Cancel", nil)
+                                                         style:UIAlertActionStyleCancel
+                                                       handler:nil];
         [v addAction:cancel];
         [self presentViewController:v animated:YES completion:nil];
         return;
     }
     
     //发现了可用的模版，可以选择某个模版执行，也可创建新的，或者取消
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"How to" message:@"" preferredStyle:UIAlertControllerStyleAlert];
-    UIAlertAction *create = [UIAlertAction actionWithTitle:@"New Template" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
-        [self createTemplateWithVideo:self->videoURL];
-        return;
-    }];
-    [alert addAction:create];
+    NSString *message = [NSString stringWithFormat:NSLocalizedString(@"%ld available template.\n select template start scan video.", nil),
+                         availableTemplatesForTheVideo.count];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:NSLocalizedString(@"Next Step?", nil)
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
     for (OCRSetting *s in availableTemplatesForTheVideo){
         UIAlertAction *action = [UIAlertAction actionWithTitle:s.name style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             for (OCRSetting *tt in self->availableTemplatesForTheVideo){
@@ -254,7 +284,14 @@ UIDocumentBrowserViewController *documentBrowserVC;
         }];
         [alert addAction:action];
     }
-    UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil];
+    UIAlertAction *create = [UIAlertAction actionWithTitle:NSLocalizedString(@"Create Template", nil)
+                                                     style:UIAlertActionStyleDestructive
+                                                   handler:^(UIAlertAction * _Nonnull action) {
+        [self createTemplateWithVideo:self->videoURL];
+        return;
+    }];
+    [alert addAction:create];
+    UIAlertAction *cancel = [UIAlertAction actionWithTitle:NSLocalizedString(@"Cancel",nil) style:UIAlertActionStyleCancel handler:nil];
     [alert addAction:cancel];
     [self presentViewController:alert animated:YES completion:nil];
     return;
@@ -329,6 +366,9 @@ UIDocumentBrowserViewController *documentBrowserVC;
                               withSource:subtitleSourceImage];
         }
         float progress = [sample imageTime]/(self->bufferFromVideo.duration.value/self->bufferFromVideo.duration.timescale);
+        if (progress > 1.f){
+            progress = 1.f;
+        }
         self->progressVC.progress = progress;
     }];
     CGImageRelease(subtitleImage);
@@ -441,12 +481,18 @@ UIDocumentBrowserViewController *documentBrowserVC;
         [self->videoURL stopAccessingSecurityScopedResource];
         [UIApplication.sharedApplication setIdleTimerDisabled:NO];
         
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Error" message:string preferredStyle:UIAlertControllerStyleAlert];
-        UIAlertAction *create = [UIAlertAction actionWithTitle:@"Create Template" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:NSLocalizedString(@"Error",nil)
+                                                                       message:string
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertAction *create = [UIAlertAction actionWithTitle:NSLocalizedString(@"Create Template",nil)
+                                                         style:UIAlertActionStyleDestructive
+                                                       handler:^(UIAlertAction * _Nonnull action) {
             [self createTemplateWithVideo:self->videoURL];
         }];
         [alert addAction:create];
-        UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil];
+        UIAlertAction *cancel = [UIAlertAction actionWithTitle:NSLocalizedString(@"Cancel", nil)
+                                                         style:UIAlertActionStyleCancel
+                                                       handler:nil];
         [alert addAction:cancel];
         [self presentViewController:alert animated:YES completion:nil];
     }];
@@ -473,7 +519,7 @@ UIDocumentBrowserViewController *documentBrowserVC;
         }else{
             //视频宽高比例不同
         }
-        errorString = [NSString stringWithFormat:@"Template %@ size is %ld x %ld,\nBut selected video is %.0f x %.0f",
+        errorString = [NSString stringWithFormat:NSLocalizedString(@"Template %@ size is %ld x %ld,\nBut selected video is %.0f x %.0f", nil),
                        setting.name,
                        [setting.videoWidth longValue],
                        [setting.videoHeight longValue],
@@ -533,9 +579,38 @@ UIDocumentBrowserViewController *documentBrowserVC;
     return;
 }
 
+UIView *storagedView;
+UIView *cellView;
 -(void)completedInMainThread{
     [UIApplication.sharedApplication setIdleTimerDisabled:NO];
     [videoURL stopAccessingSecurityScopedResource];
+    
+    NSUInteger numOfSamples = [OCRManageSegment.shared numOfSegments];
+    if (0 == numOfSamples){
+        [progressVC dismissViewControllerAnimated:YES completion:^{
+            //没有提取到任何Subtitle，可能是选择了错误的模版。
+            NSString *message = NSLocalizedString(@"The template used for scanning is incorrect, and no subtitles were found.", nil);
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:NSLocalizedString(@"NO Subtitle", nil)
+                                                                           message:message
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+            UIAlertAction *okay = [UIAlertAction actionWithTitle:@"Okay" style:UIAlertActionStyleDefault handler:nil];
+            [alert addAction:okay];
+            [self presentViewController:alert animated:YES completion:nil];
+            return;
+        }];
+        return;
+    }
+    
+    //存储动画第一步，将扫描进度界面的存储视图，移动到屏幕中间
+    float animateStep1Duration = 0.3f;
+    CGRect storageViewRect = [progressVC.view convertRect:progressVC.storageImageView.frame toView:self.view];
+    storagedView = [progressVC.storageImageView snapshotViewAfterScreenUpdates:NO];
+    [storagedView setFrame:storageViewRect];
+    [self.view addSubview:storagedView];
+    [UIView animateWithDuration:animateStep1Duration animations:^{
+        [storagedView setCenter:self.view.center];
+    }];
+    //存储动画第一步 结束
     
     [progressVC dismissViewControllerAnimated:YES completion:^{
         [OCRManageSegment.shared saveSegments];
@@ -552,12 +627,6 @@ UIDocumentBrowserViewController *documentBrowserVC;
         name = @"Debug";
     }
     NSString *file = [[NSString alloc] initWithFormat:@"%@.srt.txt", name];
-//    NSDateFormatter *df = [[NSDateFormatter alloc] init];
-//    [df setLocale:NSLocale.currentLocale];
-//    [df setTimeZone:NSTimeZone.systemTimeZone];
-//    [df setDateFormat:@"yyyyMMdd_HHmmss"];
-//    NSString *file = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/%@_%@.srt.txt", [df stringFromDate:NSDate.date], name];
-    
     NSString *fullPathFile = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/%@", file];
     if ([NSFileManager.defaultManager fileExistsAtPath:fullPathFile]){
         [NSFileManager.defaultManager removeItemAtPath:fullPathFile error:nil];
@@ -578,21 +647,52 @@ UIDocumentBrowserViewController *documentBrowserVC;
     item.sampleRate = setting.rate;
     item.languageString = [setting languageString];
     [item save];
-    [historyView addObject:item];
+    [historyView insertAnHistory:item withCompleted:^(OCRHistoryCell * _Nonnull cell) {
+        CGRect fromRect = [self->historyView convertRect:cell.frame toView:self.view];
+        //存储动画第二步， 将存储结果视图，渐变为新生成Cell视图
+        float animateStep2Duration = 0.8f;
+        float animateStep3Duration = 0.6f;
+        cellView = [cell snapshotViewAfterScreenUpdates:NO];
+        [cellView setFrame:storagedView.frame];
+        cellView.alpha = 0.f;
+        [self.view addSubview:cellView];
+        [UIView animateWithDuration:animateStep2Duration delay:0.f options:UIViewAnimationOptionCurveLinear animations:^{
+            storagedView.alpha = 0.f;
+            cellView.alpha = 1.f;
+        } completion:^(BOOL finished) {
+            
+        }];
+        //存储动画第二步 结束
+        
+        //存储动画第三步， 将Cell视图，从中间位置移动到正确位置
+        [UIView animateWithDuration:animateStep3Duration delay:animateStep2Duration options:UIViewAnimationOptionCurveEaseOut animations:^{
+            [cellView setFrame:fromRect];
+        } completion:^(BOOL finished) {
+            [cellView removeFromSuperview];
+            cellView = nil;
+            [storagedView removeFromSuperview];
+            storagedView = nil;
+            
+            //动画结束后，开启Share界面
+            [UIHans shareFile:fullPathFile withName:name withExtName:@"txt"
+                     withSize:CGSizeMake(400.f, 300.f)
+                withArrowView:self->historyView
+                withArrowFrom:fromRect];
+        }];
+        //存储动画第三步， 结束
+    }];
     if (setting){
         setting.useDate = NSDate.date;
         [setting save];
         [templateView scrollsToTop];
         [templateView reloadData];
     }
-    [UIHans shareFile:fullPathFile];
 }
 
 -(void)showTemplates:(id)sender{
-    float distance = 140.f;
     self.view.userInteractionEnabled = NO;
     [UIView animateWithDuration:0.3 delay:0.f options:UIViewAnimationOptionCurveEaseIn animations:^{
-        [self->historyView setFrame:CGRectMake(-distance, self->historyView.frame.origin.y, self->historyView.frame.size.width, self->historyView.frame.size.height)];
+        [self->historyView setFrame:CGRectMake(-self->templateViewWidth, self->historyView.frame.origin.y, self->historyView.frame.size.width, self->historyView.frame.size.height)];
     } completion:^(BOOL finished) {
         self.view.userInteractionEnabled = YES;
     }];
@@ -630,6 +730,20 @@ UIDocumentBrowserViewController *documentBrowserVC;
         [self pickupURLs:documentURLs];
     }];
     return;
+}
+
+
+#pragma mark - UIDocumentInteractionControllerDelegate
+- (UIViewController *)documentInteractionControllerViewControllerForPreview:(UIDocumentInteractionController *)controller NS_SWIFT_UI_ACTOR{
+    return self;
+}
+
+- (CGRect)documentInteractionControllerRectForPreview:(UIDocumentInteractionController *)controller{
+    return [historyView convertRect:openingCell.frame toView:self.view];;
+}
+
+- (nullable UIView *)documentInteractionControllerViewForPreview:(UIDocumentInteractionController *)controller{
+    return openingCell;
 }
 
 #pragma mark - Debug Functions
@@ -758,7 +872,9 @@ UIDocumentBrowserViewController *documentBrowserVC;
     item.languageString = @"zh-Hans";
     [item save];
     
-    [historyView addObject:item];
+    [historyView insertAnHistory:item withCompleted:^(OCRHistoryCell * _Nonnull cell) {
+        
+    }];
     return;
 }
 @end

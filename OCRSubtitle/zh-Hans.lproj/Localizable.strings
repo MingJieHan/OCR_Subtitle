@@ -1,0 +1,51 @@
+/* 
+  Localizable.strings
+  OCR_Subtitle
+
+  Created by jia yu on 2025/2/17.
+  
+*/
+
+
+"Congratulations!" = "恭喜!";
+"** Click on the subtitle box below to complete the template creation. **" = "** 点击下面的字幕框按钮, 完成模版创建。 ** ";
+"NOT Found" = "没有找到";
+"** Select the language to recognize subtitles. **" = "** 选择要识别字幕的语言(蓝色按钮)。 **";
+"Without Subtitle" = "没有字幕";
+"** Drag the timeline below to change the video thumbnail, including subtitles. **" = "** 拖动下面的时间条，改变视频缩略图包括字幕。 **";
+
+
+
+"Scan Video" = "扫描视频";
+"Create Template" = "创建模版";
+"Creating Template" = "正在创建模版";
+"Subtitle Language:" = "字幕语言:";
+"Select Language" = "选择语言";
+"Thumbnail Time:" = "缩略图时间:";
+"Template Name:" = "模版名称:";
+"Cancel" = "取消";
+"Error" = "错误";
+"Next Step?" = "下一步?";
+"%ld available template.\n select template start scan video." = "%ld个可用模版。\n 点击模版开始扫描视频。";
+"Select a video for scan subtitles." = "选择一个视频，用于扫描字幕。";
+"Select video dimensions %dx%d, Template:%@." = "选择视频尺寸%dx%d，模版:%@。";
+"Scanning video and OCR subtitle." = "正在扫描视频、正在识别字幕。";
+"Do not close this page or lock the screen." = "不要关闭程序或锁屏。";
+"Template %@ size is %ld x %ld,\nBut selected video is %.0f x %.0f" = "模版\"%@\"的视频尺寸是%ld x %ld,\n但选择视频的尺寸是%.0f x %.0f";
+"Video dimensions: %d x %d ONLY.\nCreate at:%@" = "可用视频尺寸: %d x %d。\n模版创建于:%@。";
+"The template used for scanning is incorrect, and no subtitles were found." = "扫描使用的模版错误，未能找到任何字幕。";
+"NO Subtitle" = "没有字幕";
+
+"Sample rate:" = "扫描速率:";
+"Border Color:" ="边框颜色:";
+"Border" = "边框";
+"Text Color:" = "文本颜色:";
+"Text" = "文本";
+"Name:" = "名字:";
+"Languages:" = "语言:";
+"%d t/S" = "%d次/秒";
+
+
+
+"No Available Template" = "无可用模版";
+"Video dimsnsion must same with template." = "视频尺寸必须于模版相同。";

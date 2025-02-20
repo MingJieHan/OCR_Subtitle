@@ -33,6 +33,7 @@
 @synthesize setting;
 @synthesize changedHandler;
 
+#pragma mark - System
 -(id)initWithSetting:(OCRSetting *)_setting{
     self = [super initWithStyle:UITableViewStyleGrouped];
     if (self){
@@ -46,6 +47,12 @@
     }
     return self;
 }
+-(void)viewDidLoad {
+    [super viewDidLoad];
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(close)];
+}
+
+#pragma mark - My Functions
 -(void)openLanguages{
     OCRLanguagesTableViewController *v = [[OCRLanguagesTableViewController alloc] init];
     v.selectedLanguages = [[NSMutableArray alloc] initWithArray:setting.subtitleLanguages];
@@ -53,7 +60,7 @@
         self->setting.subtitleLanguages = vc.selectedLanguages;
         self->changed = YES;
         [self->setting save];
-        NSIndexPath *indexpath = [NSIndexPath indexPathForRow:0 inSection:0];
+        NSIndexPath *indexpath = [NSIndexPath indexPathForRow:1 inSection:0];
         [self.tableView reloadRowsAtIndexPaths:@[indexpath] withRowAnimation:UITableViewRowAnimationFade];
     };
     [self.navigationController pushViewController:v animated:YES];
@@ -67,15 +74,10 @@
     }];
 }
 
--(void)viewDidLoad {
-    [super viewDidLoad];
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:self action:@selector(close)];
-}
-
 -(void)rateChanged:(id)sender{
     setting.rate = (int)rateSlider.value;
     if (rateLabel){
-        rateLabel.text = [NSString stringWithFormat:@"Rate:%d", setting.rate];
+        rateLabel.text = [NSString stringWithFormat:@"%d t/S", setting.rate];
     }
     changed = YES;
     [setting save];
@@ -85,7 +87,6 @@
 - (void)colorPickerViewControllerDidFinish:(UIColorPickerViewController *)viewController{
     return;
 }
-
 -(void)closeColorSelector{
     changed = YES;
     [setting save];
@@ -112,7 +113,6 @@
     [self closeColorSelector];
     return;
 }
-
 -(void)setTextColor{
     textColorPicker = [[UIColorPickerViewController alloc] init];
     textColorPicker.view.backgroundColor = [UIColor whiteColor];
@@ -159,8 +159,12 @@
         if (_changed){
             self->setting.name = value;
             [self->setting save];
+            self.title = self->setting.name;
+            NSIndexPath *nameIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
+            [self.tableView reloadRowsAtIndexPaths:@[nameIndexPath] withRowAnimation:UITableViewRowAnimationFade];
             self->changed = _changed;
         }
+        [self.navigationController popViewControllerAnimated:YES];
     };
     [self.navigationController pushViewController:v animated:YES];
     return;
@@ -192,16 +196,17 @@
     NSString *identifier = [self identifierWith:indexPath];
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
     if (nil == cell){
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:identifier];
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue2 reuseIdentifier:identifier];
     }
     if ([identifier isEqualToString:CELL_KEY_LANGUAGES]){
-        cell.textLabel.text = @"Languages:";
+        cell.textLabel.text = NSLocalizedString(@"Languages:",nil);
         cell.detailTextLabel.text = [OCRGetTextFromImage stringForLanguageCode:setting.subtitleLanguages.firstObject];
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     }else if ([identifier isEqualToString:CELL_KEY_RATE]){
-        cell.textLabel.text = [NSString stringWithFormat:@"Sample rate: %d t/S", setting.rate];
+        cell.textLabel.text = NSLocalizedString(@"Sample rate:",nil);
         if (nil == rateLabel){
-            rateLabel = cell.textLabel;
+            rateLabel = cell.detailTextLabel;
+            rateLabel.text = [NSString stringWithFormat:NSLocalizedString(@"%d t/S",nil), setting.rate];
         }
         if (nil == rateSlider){
             rateSlider = [[UISlider alloc] initWithFrame:CGRectMake(170.f, 18.f, cell.frame.size.width-190.f, 10.f)];
@@ -213,7 +218,7 @@
         }
         rateSlider.value = setting.rate;
     }else if ([identifier isEqualToString:CELL_KEY_TextColor]){
-        cell.textLabel.text = @"Text Color";
+        cell.textLabel.text = NSLocalizedString(@"Text Color:",nil);
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         if (nil == textDemoLabel){
             textDemoLabel = [[HansBorderLabel alloc] initWithFrame:CGRectMake(cell.frame.size.width-130.f, 7.f, 90.f, 30.f)];
@@ -222,13 +227,13 @@
             textDemoLabel.layer.masksToBounds = YES;
             textDemoLabel.layer.cornerRadius = 3.f;
             textDemoLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:24.f];
-            textDemoLabel.text = @"Text";
+            textDemoLabel.text = NSLocalizedString(@"Text",nil);
             [cell addSubview:textDemoLabel];
         }
         textDemoLabel.fontColor = setting.textColor;
         textDemoLabel.borderColor = setting.borderColor;
     }else if ([identifier isEqualToString:CELL_KEY_BorderColor]){
-        cell.textLabel.text = @"Border Color";
+        cell.textLabel.text = NSLocalizedString(@"Border Color:",nil);
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         if (nil == borderDemoLabel){
             borderDemoLabel = [[HansBorderLabel alloc] initWithFrame:CGRectMake(cell.frame.size.width-130.f, 7.f, 90.f, 30.f)];
@@ -237,13 +242,13 @@
             borderDemoLabel.layer.masksToBounds = YES;
             borderDemoLabel.layer.cornerRadius = 3.f;
             borderDemoLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:24.f];
-            borderDemoLabel.text = @"Border";
+            borderDemoLabel.text = NSLocalizedString(@"Border",nil);
             [cell addSubview:borderDemoLabel];
         }
         borderDemoLabel.fontColor = setting.textColor;
         borderDemoLabel.borderColor = setting.borderColor;
     }else if ([identifier isEqualToString:CELL_KEY_NAME]){
-        cell.textLabel.text = @"Name";
+        cell.textLabel.text = NSLocalizedString(@"Name:", nil);
         cell.detailTextLabel.text = setting.name;
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     }
@@ -265,7 +270,9 @@
 }
 
 -(NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section{
-    return [NSString stringWithFormat:@"Video dimensions: %d x %d ONLY.",
-            [setting.videoWidth intValue], [setting.videoHeight intValue]];
+    return [NSString stringWithFormat:NSLocalizedString(@"Video dimensions: %d x %d ONLY.\nCreate at:%@", nil),
+            [setting.videoWidth intValue],
+            [setting.videoHeight intValue],
+            [setting.createDate stringValue]];
 }
 @end

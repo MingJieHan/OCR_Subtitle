@@ -23,9 +23,10 @@
 -(id)init{
     self = [super init];
     if (self){
+        self.title = NSLocalizedString(@"Select Language", nil);
         self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSave target:self action:@selector(saveAction)];
         availableLanguages = [OCRGetTextFromImage availableLanguages];
-        NSLog(@"Available:%@", availableLanguages);
+//        NSLog(@"Available:%@", availableLanguages);
     }
     return self;
 }

@@ -6,6 +6,7 @@
 //
 
 #import "OCRScanningView.h"
+#import <HansServer/HansServer.h>
 
 @interface OCRScanningView(){
     UIView *lineView;
@@ -16,16 +17,15 @@
 -(id)init{
     self = [super init];
     if (self){
-//        self.backgroundColor = [UIColor colorWithRed:0.7 green:0.1 blue:0.1 alpha:0.8];
         self.backgroundColor = [UIColor clearColor];
         self.layer.borderWidth = 2.f;
-        self.layer.borderColor = [UIColor yellowColor].CGColor;
+        self.layer.borderColor = [UIHans colorFromHEXString:@"F9B30D"].CGColor;
         self.layer.masksToBounds = YES;
         self.layer.cornerRadius = 3.f;
         
         lineView = [[UIView alloc] initWithFrame:CGRectMake(0.f, 0.f, 4.f, self.frame.size.height)];
         lineView.autoresizingMask = UIViewAutoresizingFlexibleHeight;
-        lineView.backgroundColor = [UIColor greenColor];
+        lineView.backgroundColor = [UIHans colorFromHEXString:@"29C431" withAlpha:0.95f];
         [self addSubview:lineView];
         
         [self animated];

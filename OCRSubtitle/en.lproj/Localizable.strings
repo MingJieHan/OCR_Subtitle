@@ -1,0 +1,51 @@
+/* 
+  Localizable.strings
+  OCR_Subtitle
+
+  Created by jia yu on 2025/2/17.
+  
+*/
+
+
+"Congratulations!" = "Congratulations!";
+"** Click on the subtitle box below to complete the template creation. **" = "** Click on the subtitle box below to complete the template creation. **";
+"NOT Found" = "NOT Found";
+"** Select the language to recognize subtitles. **" = "** Select the language (blue button) to recognize subtitles. **";
+"Without Subtitle" = "Without Subtitle";
+"** Drag the timeline below to change the video thumbnail, including subtitles. **" = "** Drag the timeline below to change the video thumbnail, including subtitles. **";
+
+
+
+"Scan Video" = "Scan Video";
+"Create Template" = "Create Template";
+"Creating Template" = "Creating Template";
+"Subtitle Language:" = "Subtitle Language:";
+"Select Language" = "Select Language";
+"Thumbnail Time:" = "Thumbnail Time:";
+"Template Name:" = "Template Name:";
+"Cancel" = "Cancel";
+"Error" = "Error";
+"Next Step?" = "Next Step?";
+"%ld available template.\n select template start scan video." = "%ld available template.\n select template start scan video.";
+"Select a video for scan subtitles." = "Select a video for scan subtitles.";
+"Select video dimensions %dx%d, Template:%@." = "Select video dimensions %dx%d, Template:%@.";
+"Scanning video and OCR subtitle." = "Scanning video and OCR subtitle.";
+"Do not close this page or lock the screen." = "Do not close this page or lock the screen.";
+"Template %@ size is %ld x %ld,\nBut selected video is %.0f x %.0f" = "Template %@ size is %ld x %ld,\nBut selected video is %.0f x %.0f";
+"Video dimensions: %d x %d ONLY.\nCreate at:%@" = "Video dimensions: %d x %d ONLY.\nCreate at:%@";
+"The template used for scanning is incorrect, and no subtitles were found." = "The template used for scanning is incorrect, and no subtitles were found.";
+"NO Subtitle" = "NO Subtitle";
+
+"Sample rate:" = "Sample rate:";
+"Border Color:" ="Border Color:";
+"Border" = "Border";
+"Text Color:" = "Text Color:";
+"Text" = "Text";
+"Name:" = "Name:";
+"Languages:" = "Languages:";
+"%d t/S" = "%d t/S";
+
+
+
+"No Available Template" = "No Available Template";
+"Video dimsnsion must same with template." = "Video dimsnsion must same with template.";

@@ -30,8 +30,8 @@ NS_ASSUME_NONNULL_BEGIN
 -(NSUInteger)tolerance;         //SRT 时间输出的准许差 Unit is mS
 -(NSString *)languageString;
 
-+(id)wanruSetting;
-+(id)demo1Setting;
++(id)default_1Setting;
++(id)default_2Setting;
 
 -(BOOL)save;
 -(void)initDatas;

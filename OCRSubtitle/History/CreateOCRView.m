@@ -37,7 +37,7 @@
         textLabel.textColor = addLabel.textColor;
         textLabel.textAlignment = NSTextAlignmentCenter;
         textLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12.f];
-        textLabel.text = @"Scan Video";
+        textLabel.text = NSLocalizedString(@"Scan Video", nil);
         [self addSubview:textLabel];
     }
     return self;

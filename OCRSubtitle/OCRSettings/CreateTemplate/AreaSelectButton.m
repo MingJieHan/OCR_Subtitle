@@ -7,6 +7,9 @@
 
 #import "AreaSelectButton.h"
 #import <HansServer/HansServer.h>
+
+#define SUBTITLE_MAXIMUM_DISTANCE 0.04f
+#define SUBTITLE_MAXIMUM_CENTER_DISTANCE 0.1f
 @interface AreaSelectButton(){
     CGPoint topLeft;
     CGPoint topRight;
@@ -36,7 +39,7 @@
 //        self.layer.masksToBounds = YES;
         
         observation = _observation;
-        isSubtitle = [self isSubtitle];
+        isSubtitle = [self calculateWhetherSubtitle:NO];
         self.enabled = isSubtitle;
         if (isSubtitle){
             self.layer.borderColor = [UIHans colorFromHEXString:@"FACC0B"].CGColor;
@@ -111,32 +114,38 @@
     return (maxY - minY)/size.height;
 }
 
--(BOOL)isSubtitle{
-    if (fabs(observation.topLeft.y - observation.topRight.y) > 0.01f){
-//        NSLog(@"%@ 上沿不平.", self.string);
+-(BOOL)calculateWhetherSubtitle:(BOOL)printLog{
+    float value = fabs(observation.topLeft.y - observation.topRight.y);
+    if (value > SUBTITLE_MAXIMUM_DISTANCE){
+        if (printLog) NSLog(@"%@ 上沿不平:%.2f.", self.string, value);
         return NO;
     }
-    if (fabs(observation.topLeft.x - observation.bottomLeft.x) > 0.01f){
-//        NSLog(@"%@ 左侧不平.", self.string);
+    
+    value = fabs(observation.topLeft.x - observation.bottomLeft.x);
+    if (value > SUBTITLE_MAXIMUM_DISTANCE){
+        if (printLog) NSLog(@"%@ 左侧不平:%.2f.", self.string, value);
         return NO;
     }
-    if (fabs(observation.topRight.x - observation.bottomRight.x) > 0.01f){
-//        NSLog(@"%@ 右侧不平.", self.string);
+    
+    value = fabs(observation.topRight.x - observation.bottomRight.x);
+    if (value > SUBTITLE_MAXIMUM_DISTANCE){
+        if (printLog) NSLog(@"%@ 右侧不平:%.2f.", self.string, value);
         return NO;
     }
-    if (fabs(observation.bottomLeft.y - observation.bottomRight.y) > 0.01f){
-//        NSLog(@"%@ 下沿不平.", self.string);
+     
+    value = fabs(observation.bottomLeft.y - observation.bottomRight.y);
+    if (value > SUBTITLE_MAXIMUM_DISTANCE){
+        if (printLog) NSLog(@"%@ 下沿不平:%.2f.", self.string, value);
         return NO;
     }
     
     float spaceRight = 1.f - observation.topRight.x;
-    float aaa = fabs(spaceRight - observation.topLeft.x);
-    if ( aaa > 0.2){
-//        NSLog(@"不居中 %@: %.2f", string, aaa);
+    float spaceLeft = observation.topLeft.x;
+    value = fabs(spaceRight - spaceLeft);
+    if ( value > SUBTITLE_MAXIMUM_CENTER_DISTANCE){
+        if (printLog) NSLog(@"%@ 不居中,偏差:%.2f", string, value);
         return NO;
     }
-    
-//    NSLog(@"Subtitle %@: %.2f", string, aaa);
     return YES;
 }
 
