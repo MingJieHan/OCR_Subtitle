@@ -10,7 +10,7 @@
 #import "HansBorderLabel.h"
 #import "OCRScanningView.h"
 #import "HansBorderLabel.h"
-#define SUBTITLE_LABEL_TAG 5
+#import "SCRResultAnimatedLabel.h"
 
 @interface OCRProgressViewController (){
     UIImageView *currentImageView;
@@ -109,9 +109,9 @@
         [self.view addSubview:scanningView];
 
         if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
-            storageImageView = [[UIImageView alloc] initWithFrame:CGRectMake(30.f, 80.f, 120.f, 120.f)];
+            storageImageView = [[SCRStorageImageView alloc] initWithFrame:CGRectMake(30.f, 80.f, 120.f, 120.f)];
         }else{
-            storageImageView = [[UIImageView alloc] initWithFrame:CGRectMake(30.f, 80.f, 100.f, 100.f)];
+            storageImageView = [[SCRStorageImageView alloc] initWithFrame:CGRectMake(30.f, 80.f, 100.f, 100.f)];
         }
         storageImageView.autoresizingMask = UIViewAutoresizingNone;
         storageImageView.layer.masksToBounds = YES;
@@ -170,8 +170,7 @@
     }
     gottedString = _gottedString;
     dispatch_async(dispatch_get_main_queue(), ^{
-        HansBorderLabel *gottedStringLabel = [[HansBorderLabel alloc] initWithFrame:self->scanningRect];
-        gottedStringLabel.tag = SUBTITLE_LABEL_TAG;
+        SCRResultAnimatedLabel *gottedStringLabel = [[SCRResultAnimatedLabel alloc] initWithFrame:self->scanningRect];
         if (nil == self->gottedStringBorderColor){
             gottedStringLabel.borderColor = [UIColor blackColor];
         }else{
@@ -184,24 +183,11 @@
         }
         gottedStringLabel.borderWidth = self->gottedStringBorderWidth;
         gottedStringLabel.text = self->gottedString;
-        
-        [UIView animateWithDuration:0.3
-                              delay:0.f
-                            options:UIViewAnimationOptionCurveLinear|UIViewAnimationOptionAllowUserInteraction
-                         animations:^{
-            [self.view addSubview:gottedStringLabel];
-        } completion:^(BOOL finished) {
-            [UIView animateWithDuration:1.5
-                                  delay:0.3f
-                                options:UIViewAnimationOptionCurveLinear|UIViewAnimationOptionAllowUserInteraction
-                             animations:^{
-                gottedStringLabel.transform = CGAffineTransformMakeScale(0.1, 0.1);
-                [gottedStringLabel setCenter:self->storageImageView.center];
-            } completion:^(BOOL finished) {
-                [self completedAnimatedAnLabel];
-                [gottedStringLabel removeFromSuperview];
-            }];
-        }];
+        gottedStringLabel.completedHandler = ^(SCRResultAnimatedLabel * _Nonnull label) {
+            [self->storageImageView receivedAnimate];
+        };
+        [self.view addSubview:gottedStringLabel];
+        [gottedStringLabel startAnimateWithTargetCenter:self->storageImageView.center];
         return;
     });
     return;
@@ -260,13 +246,6 @@
     return;
 }
 
--(void)completedAnimatedAnLabel{
-    //TODO 这里应加入存储的表达动画，在 storageImageView 上
-//    NSLog(@"An label completed.");
-//    storageImageView
-    return;
-}
-
 -(void)panGestureRecognizer:(UIPanGestureRecognizer *)recognizer{
     CGPoint translation = [recognizer translationInView:storageImageView.superview];
     CGPoint targetCenter = CGPointMake(recognizer.view.center.x + translation.x,
@@ -285,20 +264,20 @@
     }
     storageImageView.center = targetCenter;
     for (UIView * v in self.view.subviews){
-        if ([v isKindOfClass:[HansBorderLabel class]] && v.tag == SUBTITLE_LABEL_TAG){
-            HansBorderLabel *label = (HansBorderLabel *)v;
+        if ([v isKindOfClass:[SCRResultAnimatedLabel class]]){
+            SCRResultAnimatedLabel *label = (SCRResultAnimatedLabel *)v;
+            label.targetCenter = storageImageView.center;
 //            [label setNeedsLayout];
 //            [self.view addSubview:label];
 //            [self.view.layer addSublayer:label.layer];
-
-            [label.layer removeAllAnimations];
+//            [label.layer removeAllAnimations];
             //拖动接收器位置后，正在飞行的Label不能改变到新的位置，代码未完成。
 //            NSLog(@"%@", label.layer.animationKeys);
 //            NSLog(@"Label %@ x:%.2f, y:%.2f", label.text, label.center.x, label.center.y);
             
 //            [UIView animateWithDuration:1.2
 //                                  delay:0.f
-//                                options:UIViewAnimationOptionCurveLinear|UIViewAnimationOptionAllowUserInteraction
+//                                options:UIViewAnimationOptionCurveLinear|UIViewAnimationOptionBeginFromCurrentState
 //                             animations:^{
 //                label.transform = CGAffineTransformMakeScale(0.1, 0.1);
 //                [label setCenter:self->storageImageView.center];

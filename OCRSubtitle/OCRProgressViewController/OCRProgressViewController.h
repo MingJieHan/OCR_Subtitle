@@ -6,6 +6,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "SCRStorageImageView.h"
 
 NS_ASSUME_NONNULL_BEGIN
 @interface OCRProgressViewController : UIViewController
@@ -15,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) float progress;           //float 0.f -> 1.f;
 @property (nonatomic) CGImageRef image;         //
 @property (nonatomic) NSString *gottedString;   //Animate string.
-@property (nonatomic,readonly) UIImageView *storageImageView;    //for animated target
+@property (nonatomic,readonly) SCRStorageImageView *storageImageView;    //for animated target
 
 @property (nonatomic) UIColor *gottedStringColor;
 @property (nonatomic) UIColor *gottedStringBorderColor;
