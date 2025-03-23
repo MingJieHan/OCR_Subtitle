@@ -25,6 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) float heightRate;     //0.2;  字幕最大高度
 @property (nonatomic) int rate;             //每秒取图片的数量
 
+//是否检查字幕居中，开启后，丢弃不居中的字幕。这样做可以提高准确性，但要求字幕生成市，必须选择字幕居中。
+@property (nonatomic) BOOL checkSubtitleCenter;
+
 -(CGRect)regionOfInterest;      //从左下角开始，与OC其他位置计算不同
 -(float)minimumFrameSpacing;    //Unit is S
 -(NSUInteger)tolerance;         //SRT 时间输出的准许差 Unit is mS

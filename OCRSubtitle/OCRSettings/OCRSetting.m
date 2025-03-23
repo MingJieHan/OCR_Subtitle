@@ -26,7 +26,7 @@
 @synthesize image;
 @synthesize subtitleLanguages;
 @synthesize textColor,borderColor;
-
+@synthesize checkSubtitleCenter;
 
 @dynamic createDate,modifieDate,useDate;
 @dynamic name,note;

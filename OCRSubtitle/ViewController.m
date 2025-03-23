@@ -346,12 +346,16 @@ UIDocumentBrowserViewController *documentBrowserVC;
                 NSLog(@"信心不足 %.2f, 丢弃:%@",seg.confidence, seg.string);
                 continue;
             }
-            float err = fabsf([seg centerOffset]);
-            if (err >= 0.02f){
-                //此种处理方法，基于字幕文字在视频左右居中的假设。
-                NSLog(@"文字不在正中间，丢弃: %@", seg.string);
-                continue;
+            
+            if (self->setting.checkSubtitleCenter){
+                float err = fabsf([seg centerOffset]);
+                if (err >= 0.02f){
+                    //此种处理方法，基于字幕文字在视频左右居中的假设。
+                    NSLog(@"文字不在正中间，丢弃: %@", seg.string);
+                    continue;
+                }
             }
+            
             NSLog(@"%.2f sec:%@", seg.t, seg.string);
             self->progressVC.gottedString = seg.string;
 //            NSString *debugString = @"职亚个人不缴纳工伤保险费";

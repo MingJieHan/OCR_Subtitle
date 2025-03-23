@@ -49,3 +49,7 @@
 
 "No Available Template" = "无可用模版";
 "Video dimsnsion must same with template." = "视频尺寸必须于模版相同。";
+
+
+"Subtitle Alignment" = "字幕位置";
+"Center" = "居中";
