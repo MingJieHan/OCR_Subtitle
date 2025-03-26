@@ -34,10 +34,13 @@ NS_ASSUME_NONNULL_BEGIN
                       textTolerances:(float)textTolerances
                           boardColor:(UIColor *)boardColor
                      boardTolerances:(float)boardTolerances;
-//                        scopeMinumim:(NSUInteger)min
-//                             maximum:(NSUInteger)max
-//                        replaceValue:(NSUInteger)value
-//                                gate:(NSUInteger)gate;
+
+
+/*
+ regionOfInterest 非常重要的参数，用于描述扫描区域在图片中的位置
+ regionOfInterest的坐标起点为左下角，不是右上角！！
+ regionOfInterest的数值为0 - 1，即所占图像宽度的比例
+ */
 @property (nonatomic,readonly) CGRect regionOfInterest;
 
 -(CGImageRef)createRegionOfInterestImageFromFullImage:(CGImageRef)spreadCGImage withOrientation:(UIImageOrientation)orientation;

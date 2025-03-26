@@ -186,7 +186,7 @@
     if (orientation == kCGImagePropertyOrientationUp){
         imageRequest = [[VNImageRequestHandler alloc] initWithCGImage:image options:opt];
     }else{
-        imageRequest = [[VNImageRequestHandler alloc] initWithCGImage:image orientation:kCGImagePropertyOrientationRight options:opt];
+        imageRequest = [[VNImageRequestHandler alloc] initWithCGImage:image orientation:orientation options:opt];
     }
     NSError *error = nil;
     BOOL success = [imageRequest performRequests:@[self->request] error:&error];

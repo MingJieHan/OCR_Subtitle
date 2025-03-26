@@ -426,10 +426,10 @@
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
     CGContextRef context = nil;
     if (orientation == UIImageOrientationUp){
-        //        UIImageOrientationUp
+        //UIImageOrientationUp, 图像向上，把
         context = CGBitmapContextCreate(nil, width, height, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
         if (nil == context){
-            NSLog(@"stop here.");
+            NSLog(@"stop UIImageOrientationUp here.");
         }
         CGRect rect = CGRectMake(-regionOfInterest.origin.x * imageSize.width,
                                  -regionOfInterest.origin.y * imageSize.height,
@@ -437,10 +437,10 @@
                                  imageSize.height);
         CGContextDrawImage(context, rect, bigImage);
     }else if (orientation == UIImageOrientationRight){
-        //        UIImageOrientationRight
+        //UIImageOrientationRight 图像向右转90度后，才是正确的图片，直接竖直切一片内容返回
         context = CGBitmapContextCreate(nil, height, width, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
         if (nil == context){
-            NSLog(@"stop here.");
+            NSLog(@"stop UIImageOrientationRight here.");
         }
         CGRect rect = CGRectMake(-(imageSize.height - imageSize.height * regionOfInterest.origin.y - height),
                                  imageSize.width * regionOfInterest.origin.x,
@@ -448,9 +448,10 @@
                                  imageSize.width);
         CGContextDrawImage(context, rect, bigImage);
     }else if (orientation == UIImageOrientationLeft){
+        //UIImageOrientationLeft 图像向左转90度后，才是正确图片，直接竖直切一片内容返回
         context = CGBitmapContextCreate(nil, height, width, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
         if (nil == context){
-            NSLog(@"stop here.");
+            NSLog(@"stop UIImageOrientationLeft here.");
         }
         CGRect rect = CGRectMake(-imageSize.height * regionOfInterest.origin.y,
                                  -(imageSize.width - regionOfInterest.origin.x * imageSize.width - width),
@@ -458,7 +459,7 @@
                                  imageSize.width);
         CGContextDrawImage(context, rect, bigImage);
     }else{
-        NSLog(@"UnAvailable.");
+        NSLog(@"stop UIImageOrientation UnAvailable.");
     }
     CGImageRef smallImage = CGBitmapContextCreateImage(context);
     CGContextRelease(context);

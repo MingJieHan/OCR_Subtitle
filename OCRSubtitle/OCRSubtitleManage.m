@@ -144,7 +144,7 @@ static OCRSubtitleManage *staticOCRSubtitleManage;
     if (txf.a == 0 && txf.b == 1.0 && txf.c == -1.0 && txf.d == 0) {
         oriention = UIImageOrientationRight;
     }
-    if (txf.a == 0 && txf.b == -1.0 && txf.c == 1.0 && txf.d == 0) {
+    if (txf.a == 0 && txf.b == -1.0 && txf.c == 1.0 && txf.d == 0) {    //txf.tx == 0 txf.ty == 0
         oriention = UIImageOrientationLeft;
     }
     if (txf.a == 1.0 && txf.b == 0 && txf.c == 0 && txf.d == 1.0) {

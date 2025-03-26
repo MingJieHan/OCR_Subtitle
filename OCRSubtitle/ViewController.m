@@ -346,9 +346,8 @@ UIDocumentBrowserViewController *documentBrowserVC;
         NSLog(@"Stop debug.");
         return;
     }
-//    UIImage *i = [[UIImage alloc] initWithCGImage:subtitleSourceImage];
+//    UIImage *i = [[UIImage alloc] initWithCGImage:sourceCGImage];
 //    [i savePNGIntoFile:@"test"];
-    //TODO createRegionOfInterestImageFromFullImage 不支持CGImageRef 带方向的情况。
     
     CGImageRef subtitleImage = nil;
     if (predImage){
