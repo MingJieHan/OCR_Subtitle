@@ -6,7 +6,6 @@
 //
 
 #import "OCRSegment.h"
-#import <UIKit/UIKit.h>
 #define LAST_SEGMENTS_FILE @"lastSegments.dat"
 
 #define KEY_OCRSegment_Time @"time"
@@ -111,7 +110,8 @@
 
 -(void)buildObservationWithCGImage:(CGImageRef)subtitleCGImage
                         withSource:(CGImageRef)subtitleSourceCGImage
-                         saveDebug:(BOOL)savePNGFile{
+                         saveDebug:(BOOL)savePNGFile
+              withImageOrientation:(UIImageOrientation)orientation{
     NSString *file = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
     file = [file stringByAppendingPathComponent:@"images"];
     if (NO == [NSFileManager.defaultManager fileExistsAtPath:file]){
@@ -122,7 +122,7 @@
         NSString *name = [[NSString alloc] initWithFormat:@"%@.png", string];
         subtitleImageFile = [file stringByAppendingPathComponent:name];
         if (NO == [NSFileManager.defaultManager fileExistsAtPath:subtitleImageFile]){
-            UIImage *im = [[UIImage alloc] initWithCGImage:subtitleCGImage];
+            UIImage *im = [[UIImage alloc] initWithCGImage:subtitleCGImage scale:1.f orientation:orientation];
             [UIImagePNGRepresentation(im) writeToFile:subtitleImageFile atomically:YES];
         }
     }
@@ -135,7 +135,7 @@
     if (savePNGFile){
         NSString *name = [[NSString alloc] initWithFormat:@"%@_source.png", string];
         subtitleSourceImageFile = [file stringByAppendingPathComponent:name];
-        UIImage *image_source = [[UIImage alloc] initWithCGImage:subtitleSourceCGImage];
+        UIImage *image_source = [[UIImage alloc] initWithCGImage:subtitleSourceCGImage scale:1.f orientation:orientation];
         [UIImagePNGRepresentation(image_source) writeToFile:subtitleSourceImageFile atomically:YES];
     }
     sourceImageObservation = [self observeWithImage:subtitleSourceCGImage];

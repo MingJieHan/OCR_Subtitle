@@ -6,6 +6,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 #import <CoreData/CoreData.h>
 @class OCRHistory;
 @class OCRSetting;
@@ -23,5 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(BOOL)save;
 -(BOOL)removeItem:(NSManagedObject *)item;
+
++(UIImageOrientation)imageOrientionFromCGAffineTransform:(CGAffineTransform)txf;
 @end
 NS_ASSUME_NONNULL_END

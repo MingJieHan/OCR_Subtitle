@@ -8,7 +8,7 @@
 #import <Foundation/Foundation.h>
 #import "OCRSegment.h"
 #import "SampleObject.h"
-
+#import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 @interface OCRManageSegment : NSObject
@@ -18,7 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 -(BOOL)loadSegments;
 
 -(NSUInteger)numOfSegments;
--(void)add:(OCRSegment *)segment withSubtitleImage:(CGImageRef)subtitleCGImage withSource:(CGImageRef)subtitleSourceCGImage;
+-(void)addSegment:(OCRSegment *)segment withSubtitleImage:(CGImageRef)subtitleCGImage
+       withSource:(CGImageRef)subtitleSourceCGImage withImageOrientation:(UIImageOrientation)orientation;
 -(void)clear;
 
 //Tolerance 字幕准许的差
@@ -30,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 //Mutex thread, return object in line
--(NSUInteger)appendSample:(CMSampleBufferRef)ciImage;
+-(NSUInteger)appendSample:(CMSampleBufferRef)ciImage withTransform:(CGAffineTransform)transform;
 //Mutex thread
 -(SampleObject * _Nullable)getWaitingSample;
 //Mutex thread

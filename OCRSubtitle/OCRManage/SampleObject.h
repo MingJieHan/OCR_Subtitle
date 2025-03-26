@@ -11,7 +11,9 @@
 NS_ASSUME_NONNULL_BEGIN
 @interface SampleObject : NSObject
 -(id)init NS_UNAVAILABLE;
--(id)initWithSample:(CMSampleBufferRef)sample;
+@property (nonatomic,readonly) CGAffineTransform transform;
+
+-(id)initWithSample:(CMSampleBufferRef)sample withTransform:(CGAffineTransform)transform;
 
 -(CGImageRef)createCGImage;
 -(float)imageTime;

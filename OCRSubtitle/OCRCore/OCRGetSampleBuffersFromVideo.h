@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreMedia/CoreMedia.h>
+#import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 @interface OCRGetSampleBuffersFromVideo : NSObject
@@ -14,11 +15,14 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,readonly) CMTimeRange timeRange;
 @property (nonatomic,readonly) BOOL ready;
 @property (nonatomic,readonly) CGSize videoSize;
+@property (nonatomic,readonly) CGAffineTransform videoTransform;
 -(id)init NS_UNAVAILABLE;
 
 -(id)initWithVideoURL:(NSURL *)videoURL;
 
 -(id)initWithVideoURL:(NSURL *)videoURL withBegin:(float)start withEnd:(float)end;
+
+-(CGSize)sizeAfterOrientation;
 
 //return nil when finish.
 -(CMSampleBufferRef)copyNextBuffer;

@@ -40,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
 //                                gate:(NSUInteger)gate;
 @property (nonatomic,readonly) CGRect regionOfInterest;
 
--(CGImageRef)createRegionOfInterestImageFromFullImage:(CGImageRef)spreadCGImage;
+-(CGImageRef)createRegionOfInterestImageFromFullImage:(CGImageRef)spreadCGImage withOrientation:(UIImageOrientation)orientation;
 -(VNFeaturePrintObservation *)observationWithCGImage:(CGImageRef)image;
 @end
 NS_ASSUME_NONNULL_END

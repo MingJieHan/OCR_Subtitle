@@ -7,6 +7,9 @@
 
 #import "SampleObject.h"
 #import <CoreImage/CoreImage.h>
+#import <UIKit/UIKit.h>
+#import "OCRSubtitleManage.h"
+
 @interface SampleObject(){
     CMSampleBufferRef buffer;
     CMTime t;
@@ -15,10 +18,13 @@
 @end
 
 @implementation SampleObject
--(id)initWithSample:(CMSampleBufferRef)sample{
+@synthesize transform;
+
+-(id)initWithSample:(CMSampleBufferRef)sample withTransform:(CGAffineTransform)_transform{
     self = [super init];
     if (self){
         buffer = sample;
+        transform = _transform;
         imageBuffer = CMSampleBufferGetImageBuffer(sample);
         t = CMSampleBufferGetPresentationTimeStamp(sample);
     }
@@ -33,6 +39,7 @@
     CGImageRef cgImage = [context createCGImage:c fromRect:CGRectMake(0.f, 0.f, width, height)];
     return cgImage;
 }
+
 
 -(float)imageTime{
     return (float)t.value/t.timescale;

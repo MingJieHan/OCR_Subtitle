@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 #import <Vision/Vision.h>
+#import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 @interface OCRSegment : NSObject <NSSecureCoding>
@@ -42,7 +43,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(void)buildObservationWithCGImage:(CGImageRef)subtitleCGImage
                         withSource:(CGImageRef)subtitleSourceCGImage
-                         saveDebug:(BOOL)savePNGFile;
+                         saveDebug:(BOOL)savePNGFile
+              withImageOrientation:(UIImageOrientation)orientation;
 +(void)clearImages;
 
 #pragma mark - Archiver

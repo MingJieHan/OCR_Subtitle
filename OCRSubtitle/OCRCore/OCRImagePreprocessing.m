@@ -13,6 +13,7 @@
 @interface OCRImagePreprocessing(){
     unsigned char *rawData;
     unsigned short **map;
+    UIGraphicsImageRenderer *render;
     NSMutableArray *waitingSpreadPoints;
     NSUInteger bytesPerPixel;
     NSUInteger bytesPerRow;
@@ -419,19 +420,46 @@
     return spreadImage;
 }
 
--(CGImageRef)createRegionOfInterestImageFromFullImage:(CGImageRef)bigImage{
+-(CGImageRef)createRegionOfInterestImageFromFullImage:(CGImageRef)bigImage withOrientation:(UIImageOrientation)orientation{
     float width = regionOfInterest.size.width * imageSize.width;
     float height = regionOfInterest.size.height * imageSize.height;
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    CGContextRef context = CGBitmapContextCreate(nil, width, height, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
-    if (nil == context){
-        NSLog(@"stop here.");
+    CGContextRef context = nil;
+    if (orientation == UIImageOrientationUp){
+        //        UIImageOrientationUp
+        context = CGBitmapContextCreate(nil, width, height, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+        if (nil == context){
+            NSLog(@"stop here.");
+        }
+        CGRect rect = CGRectMake(-regionOfInterest.origin.x * imageSize.width,
+                                 -regionOfInterest.origin.y * imageSize.height,
+                                 imageSize.width,
+                                 imageSize.height);
+        CGContextDrawImage(context, rect, bigImage);
+    }else if (orientation == UIImageOrientationRight){
+        //        UIImageOrientationRight
+        context = CGBitmapContextCreate(nil, height, width, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+        if (nil == context){
+            NSLog(@"stop here.");
+        }
+        CGRect rect = CGRectMake(-(imageSize.height - imageSize.height * regionOfInterest.origin.y - height),
+                                 imageSize.width * regionOfInterest.origin.x,
+                                 imageSize.height,
+                                 imageSize.width);
+        CGContextDrawImage(context, rect, bigImage);
+    }else if (orientation == UIImageOrientationLeft){
+        context = CGBitmapContextCreate(nil, height, width, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+        if (nil == context){
+            NSLog(@"stop here.");
+        }
+        CGRect rect = CGRectMake(-imageSize.height * regionOfInterest.origin.y,
+                                 -(imageSize.width - regionOfInterest.origin.x * imageSize.width - width),
+                                 imageSize.height,
+                                 imageSize.width);
+        CGContextDrawImage(context, rect, bigImage);
+    }else{
+        NSLog(@"UnAvailable.");
     }
-    CGRect rect = CGRectMake(-regionOfInterest.origin.x * imageSize.width,
-                             -regionOfInterest.origin.y * imageSize.height,
-                             imageSize.width,
-                             imageSize.height);
-    CGContextDrawImage(context, rect, bigImage);
     CGImageRef smallImage = CGBitmapContextCreateImage(context);
     CGContextRelease(context);
     CGColorSpaceRelease(colorSpace);

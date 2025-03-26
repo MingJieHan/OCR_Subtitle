@@ -49,11 +49,13 @@ static OCRManageSegment *staticOCRManageSegment;
 -(NSUInteger)numOfSegments{
     return segments.count;
 }
--(void)add:(OCRSegment *)segment withSubtitleImage:(CGImageRef)subtitleCGImage withSource:(CGImageRef)subtitleSourceCGImage{
+-(void)addSegment:(OCRSegment *)segment withSubtitleImage:(CGImageRef)subtitleCGImage
+       withSource:(CGImageRef)subtitleSourceCGImage withImageOrientation:(UIImageOrientation)orientation{
     pthread_mutex_lock(&mutex);
     [segment buildObservationWithCGImage:subtitleCGImage
                               withSource:subtitleSourceCGImage
-                               saveDebug:NO];
+                               saveDebug:NO
+                    withImageOrientation:orientation];
     [segments addObject:segment];
     pthread_mutex_unlock(&mutex);
 }
@@ -245,12 +247,12 @@ static OCRManageSegment *staticOCRManageSegment;
     }
 }
 
--(NSUInteger)appendSample:(CMSampleBufferRef)sample{
+-(NSUInteger)appendSample:(CMSampleBufferRef)sample withTransform:(CGAffineTransform)transform{
     pthread_mutex_lock(&mutex);
     if (nil == buffers){
         buffers = [[NSMutableArray alloc] init];
     }
-    SampleObject *o = [[SampleObject alloc] initWithSample:sample];
+    SampleObject *o = [[SampleObject alloc] initWithSample:sample withTransform:transform];
     [buffers addObject:o];
     NSUInteger count = buffers.count;
     pthread_mutex_unlock(&mutex);

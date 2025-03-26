@@ -179,12 +179,15 @@
     return;
 }
 
--(void)OCRImage:(CGImageRef)image withImageTime:(NSTimeInterval)imageTime handler:(OCRGetTextFromImage_Handler)_completeHandler{
+-(void)OCRImage:(CGImageRef)image withOrientation:(CGImagePropertyOrientation)orientation withImageTime:(NSTimeInterval)imageTime handler:(OCRGetTextFromImage_Handler)_completeHandler{
     handler = _completeHandler;
     currentImageTime = imageTime;
     NSMutableDictionary *opt = [[NSMutableDictionary alloc] init];
-    imageRequest = [[VNImageRequestHandler alloc] initWithCGImage:image options:opt];
-    
+    if (orientation == kCGImagePropertyOrientationUp){
+        imageRequest = [[VNImageRequestHandler alloc] initWithCGImage:image options:opt];
+    }else{
+        imageRequest = [[VNImageRequestHandler alloc] initWithCGImage:image orientation:kCGImagePropertyOrientationRight options:opt];
+    }
     NSError *error = nil;
     BOOL success = [imageRequest performRequests:@[self->request] error:&error];
     if (NO == success){

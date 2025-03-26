@@ -30,7 +30,7 @@
 @implementation OCRProgressViewController
 @synthesize storageImageView;
 @synthesize progress;
-@synthesize image;
+@synthesize image,imageOrientation;
 @synthesize gottedString;
 @synthesize gottedStringColor,gottedStringBorderColor,gottedStringBorderWidth;
 @synthesize passTopRate,heightRate;
@@ -217,7 +217,7 @@
     }
     image = _image;
     dispatch_async(dispatch_get_main_queue(), ^{
-        self->currentImageView.image = [[UIImage alloc] initWithCGImage:self->image];
+        self->currentImageView.image = [[UIImage alloc] initWithCGImage:self->image scale:1.f orientation:self->imageOrientation];
         float scaleWidth = self->currentImageView.image.size.width/self->currentImageView.frame.size.width;
         float scaleHeight = self->currentImageView.image.size.height/self->currentImageView.frame.size.height;
         float seekX = 0.f;

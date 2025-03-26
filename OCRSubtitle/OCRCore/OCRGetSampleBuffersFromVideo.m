@@ -7,8 +7,8 @@
 
 #import "OCRGetSampleBuffersFromVideo.h"
 #import <CoreImage/CoreImage.h>
-#import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
+#import "OCRSubtitleManage.h"
 
 @interface OCRGetSampleBuffersFromVideo(){
     AVAssetReader *assetReader;
@@ -23,6 +23,7 @@
 @synthesize timeRange;
 @synthesize ready;
 @synthesize videoSize;
+@synthesize videoTransform;
 
 -(id)initWithVideoURL:(NSURL *)videoURL{
     return [[OCRGetSampleBuffersFromVideo alloc] initWithVideoURL:videoURL withBegin:0.f withEnd:99999999.f];
@@ -44,6 +45,7 @@
         duration = inputAsset.duration;
         
         AVAssetTrack *videoTrack = [inputAsset tracksWithMediaType:AVMediaTypeVideo].firstObject;
+        videoTransform = videoTrack.preferredTransform;
         videoSize = videoTrack.naturalSize;
         
         __weak typeof(self) weakSelf = self;
@@ -105,5 +107,13 @@
         NSLog(@"error startreading %@", asset);
     }
     ready = YES;
+}
+
+-(CGSize)sizeAfterOrientation{
+    UIImageOrientation oriention = [OCRSubtitleManage imageOrientionFromCGAffineTransform:videoTransform];
+    if (oriention == UIImageOrientationLeft || oriention == UIImageOrientationRight){
+        return CGSizeMake(videoSize.height, videoSize.width);
+    }
+    return videoSize;
 }
 @end

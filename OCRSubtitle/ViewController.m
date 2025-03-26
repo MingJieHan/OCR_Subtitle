@@ -42,7 +42,7 @@
     OCRTemplateCollectionView *templateView;
     OCRHistoryCollectionView *historyView;
     UILabel *verLabel;
-    UIImage *thumbnailCGImage;
+    UIImage *thumbnailImage;
     
     NSArray <OCRSetting *>*availableTemplatesForTheVideo;
     float templateViewWidth;
@@ -172,6 +172,7 @@ OCRHistoryCell *openingCell;
     return;
 }
 
+
 -(void)viewDidAppear:(BOOL)animated{
     [super viewDidAppear:animated];
     
@@ -297,8 +298,34 @@ UIDocumentBrowserViewController *documentBrowserVC;
     return;
 }
 
+-(CGImagePropertyOrientation)convertOrientation:(UIImageOrientation)imageOrientation{
+    switch (imageOrientation) {
+        case UIImageOrientationUp:
+            return kCGImagePropertyOrientationUp;
+        case UIImageOrientationDown:
+            return kCGImagePropertyOrientationDown;
+        case UIImageOrientationLeft:
+            return kCGImagePropertyOrientationLeft;
+        case UIImageOrientationRight:
+            return kCGImagePropertyOrientationRight;
+        case UIImageOrientationUpMirrored:
+            return kCGImagePropertyOrientationUpMirrored;
+        case UIImageOrientationDownMirrored:
+            return kCGImagePropertyOrientationDownMirrored;
+        case UIImageOrientationLeftMirrored:
+            return kCGImagePropertyOrientationLeftMirrored;
+        case UIImageOrientationRightMirrored:
+            return kCGImagePropertyOrientationRightMirrored;
+        default:
+            break;
+    }
+    return kCGImagePropertyOrientationUp;
+}
+
 -(void)OCRSampleInThread:(SampleObject *)sample threadNum:(int)threadIndex{
     CGImageRef sourceCGImage = [sample createCGImage];
+    UIImageOrientation orientation = [OCRSubtitleManage imageOrientionFromCGAffineTransform:sample.transform];
+    
     OCRImagePreprocessing *imageWorker = [imagePre objectAtIndex:threadIndex];
     
     CGImageRef predImage = nil;
@@ -314,15 +341,18 @@ UIDocumentBrowserViewController *documentBrowserVC;
     }
     
     CGImageRef subtitleSourceImage = nil;
-    subtitleSourceImage = [imageWorker createRegionOfInterestImageFromFullImage:sourceCGImage];
+    subtitleSourceImage = [imageWorker createRegionOfInterestImageFromFullImage:sourceCGImage withOrientation:orientation];
     if (nil == subtitleSourceImage){
         NSLog(@"Stop debug.");
         return;
     }
+//    UIImage *i = [[UIImage alloc] initWithCGImage:subtitleSourceImage];
+//    [i savePNGIntoFile:@"test"];
+    //TODO createRegionOfInterestImageFromFullImage 不支持CGImageRef 带方向的情况。
     
     CGImageRef subtitleImage = nil;
     if (predImage){
-        subtitleImage = [imageWorker createRegionOfInterestImageFromFullImage:predImage];
+        subtitleImage = [imageWorker createRegionOfInterestImageFromFullImage:predImage withOrientation:orientation];
     }
     
 // 重载入测试开始
@@ -333,12 +363,15 @@ UIDocumentBrowserViewController *documentBrowserVC;
 //    UIImage *readed = [[UIImage alloc] initWithContentsOfFile:file];
 //重载入测试结束
     progressVC.image = sourceCGImage;
+    progressVC.imageOrientation = orientation;
     
     CGImageRef scanImage = predImage;
     if (nil == scanImage){
         scanImage = sourceCGImage;
     }
+        
     [[textFromImage objectAtIndex:threadIndex] OCRImage:scanImage
+                                        withOrientation:[self convertOrientation:orientation]
                                           withImageTime:[sample imageTime]
                                                 handler:^(NSArray<OCRSegment *> * _Nonnull results) {
         for (OCRSegment *seg in results){
@@ -364,10 +397,11 @@ UIDocumentBrowserViewController *documentBrowserVC;
 //                [self saveCGImage:predImage withName:[NSString stringWithFormat:@"%.2f_pred_%@", seg.t, seg.string]];
 //                NSLog(@"Debug text");
 //            }
-            self->thumbnailCGImage = [[UIImage alloc] initWithCGImage:sourceCGImage];
-            [OCRManageSegment.shared add:seg
+            self->thumbnailImage = [[UIImage alloc] initWithCGImage:sourceCGImage scale:1.f orientation:orientation];
+            [OCRManageSegment.shared addSegment:seg
                        withSubtitleImage:subtitleImage
-                              withSource:subtitleSourceImage];
+                                     withSource:subtitleSourceImage
+                           withImageOrientation:orientation];
         }
         float progress = [sample imageTime]/(self->bufferFromVideo.duration.value/self->bufferFromVideo.duration.timescale);
         if (progress > 1.f){
@@ -426,7 +460,7 @@ UIDocumentBrowserViewController *documentBrowserVC;
             }
             lastSecond = theSecond;
             
-            [OCRManageSegment.shared appendSample:sampleBuffer];
+            [OCRManageSegment.shared appendSample:sampleBuffer withTransform:bufferFromVideo.videoTransform];
             while ([OCRManageSegment.shared numOfCurrentSamples] > 20) {
                 [NSThread sleepForTimeInterval:0.1];
             }
@@ -512,8 +546,9 @@ UIDocumentBrowserViewController *documentBrowserVC;
     
     startDate = NSDate.date;
     bufferFromVideo = [[OCRGetSampleBuffersFromVideo alloc] initWithVideoURL:videoURL];
-    if (bufferFromVideo.videoSize.width != [setting.videoWidth floatValue]
-        || bufferFromVideo.videoSize.height != [setting.videoHeight floatValue]){
+    CGSize videoSize = [bufferFromVideo sizeAfterOrientation];
+    if (videoSize.width != [setting.videoWidth floatValue]
+        || videoSize.height != [setting.videoHeight floatValue]){
         //Warning for different size with setting.
         float vRate = bufferFromVideo.videoSize.width/bufferFromVideo.videoSize.height;
         float sRate = [setting.videoWidth floatValue]/[setting.videoHeight floatValue];
@@ -527,8 +562,8 @@ UIDocumentBrowserViewController *documentBrowserVC;
                        setting.name,
                        [setting.videoWidth longValue],
                        [setting.videoHeight longValue],
-                       bufferFromVideo.videoSize.width,
-                       bufferFromVideo.videoSize.height];
+                       videoSize.width,
+                       videoSize.height];
         [self exceptStopWithErrorString:errorString];
         return;
     }
@@ -647,7 +682,7 @@ UIView *cellView;
     }
     item.completedDate = NSDate.date;
     item.usageSeconds = [NSDate.date timeIntervalSinceDate:startDate];
-    item.thumbnailImageData = UIImageJPEGRepresentation(thumbnailCGImage, 0.7);
+    item.thumbnailImageData = UIImageJPEGRepresentation(thumbnailImage, 0.7);
     item.sampleRate = setting.rate;
     item.languageString = [setting languageString];
     [item save];
@@ -773,7 +808,7 @@ UIView *cellView;
         for (NSString *name in array){
             NSString *file = [path stringByAppendingPathComponent:name];
             UIImage *image = [[UIImage alloc] initWithContentsOfFile:file];
-            [[self->textFromImage objectAtIndex:0] OCRImage:image.CGImage withImageTime:100.1f handler:^(NSArray<OCRSegment *> * _Nonnull results) {
+            [[self->textFromImage objectAtIndex:0] OCRImage:image.CGImage withOrientation:kCGImagePropertyOrientationUp withImageTime:100.1f handler:^(NSArray<OCRSegment *> * _Nonnull results) {
                 for (OCRSegment *seg in results){
                     NSLog(@"Debug image result:%@ in %@", seg.string, name);
 //                        [OCRManageSegment.shared add:seg];
@@ -787,7 +822,7 @@ UIView *cellView;
 -(void)debugPreprocessingImage{
     [NSThread detachNewThreadWithBlock:^{
         UIImage *image = [[UIImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"test" ofType:@"png"]];
-        [[self->textFromImage objectAtIndex:0] OCRImage:image.CGImage withImageTime:0.1 handler:^(NSArray<OCRSegment *> * _Nonnull results) {
+        [[self->textFromImage objectAtIndex:0] OCRImage:image.CGImage withOrientation:kCGImagePropertyOrientationUp withImageTime:0.1 handler:^(NSArray<OCRSegment *> * _Nonnull results) {
             for (OCRSegment *seg in results){
                 NSLog(@"直接提取：%@", seg.string);
             }
@@ -807,7 +842,7 @@ UIView *cellView;
         [NSFileManager.defaultManager removeItemAtPath:file error:nil];
         [UIImagePNGRepresentation(newImage) writeToFile:file atomically:YES];
 
-        [[self->textFromImage objectAtIndex:0] OCRImage:resImage withImageTime:0.1 handler:^(NSArray<OCRSegment *> * _Nonnull results) {
+        [[self->textFromImage objectAtIndex:0] OCRImage:resImage withOrientation:kCGImagePropertyOrientationUp withImageTime:0.1 handler:^(NSArray<OCRSegment *> * _Nonnull results) {
             for (OCRSegment *seg in results){
                 NSLog(@"预处理后：%@", seg.string);
             }
@@ -815,7 +850,7 @@ UIView *cellView;
         CGImageRelease(resImage);
         
         image = [[UIImage alloc] initWithContentsOfFile:file];
-        [[self->textFromImage objectAtIndex:0] OCRImage:image.CGImage withImageTime:0.1 handler:^(NSArray<OCRSegment *> * _Nonnull results) {
+        [[self->textFromImage objectAtIndex:0] OCRImage:image.CGImage withOrientation:kCGImagePropertyOrientationUp withImageTime:0.1 handler:^(NSArray<OCRSegment *> * _Nonnull results) {
             for (OCRSegment *seg in results){
                 NSLog(@"预处理，且重载入：%@", seg.string);
             }
@@ -849,7 +884,7 @@ UIView *cellView;
                 OCRGetTextFromImage *textFromImageThread = [[OCRGetTextFromImage alloc] initWithLanguage:self->setting.subtitleLanguages
                                                                                    withMinimumTextHeight:self->setting.heightRate
                                                                                     withRegionOfInterest:[self->setting regionOfInterest]];
-                [textFromImageThread OCRImage:resImage withImageTime:0.1 handler:^(NSArray<OCRSegment *> * _Nonnull results) {
+                [textFromImageThread OCRImage:resImage withOrientation:kCGImagePropertyOrientationUp withImageTime:0.1 handler:^(NSArray<OCRSegment *> * _Nonnull results) {
                     for (OCRSegment *seg in results){
                         NSLog(@"%@", seg.string);
                     }

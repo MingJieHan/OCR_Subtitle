@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic) float progress;           //float 0.f -> 1.f;
 @property (nonatomic) CGImageRef image;         //
+@property (nonatomic) UIImageOrientation imageOrientation;
 @property (nonatomic) NSString *gottedString;   //Animate string.
 @property (nonatomic,readonly) SCRStorageImageView *storageImageView;    //for animated target
 

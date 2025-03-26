@@ -77,7 +77,11 @@ UIColor * _Nonnull templateColor;
     if (nil == videoTrack){
         return nil;
     }
+    UIImageOrientation orientation = [OCRSubtitleManage imageOrientionFromCGAffineTransform:videoTrack.preferredTransform];
     CGSize videoSize = [videoTrack naturalSize];
+    if (orientation == UIImageOrientationLeft || orientation == UIImageOrientationRight){
+        videoSize = CGSizeMake(videoSize.height, videoSize.width);
+    }
     NSMutableArray *res = [[NSMutableArray alloc] init];
     for (OCRSetting *the in templates){
         if ([the.videoWidth floatValue] == videoSize.width

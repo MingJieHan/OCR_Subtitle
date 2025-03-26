@@ -6,6 +6,7 @@
 //
 
 #import <Foundation/Foundation.h>
+
 #pragma mark - Hans Category
 #import <HansServer/NSHansCategory.h>
 
@@ -19,6 +20,7 @@
 #pragma mark - Hans Base Tools
 #import <HansServer/NSDjangoUTCConvert.h>
 #import <HansServer/UIHans.h>
+#import <HansServer/HansImageTools.h>
 #import <HansServer/UIContactHansLabel.h>
 #import <HansServer/UIHansJSONViewController.h>
 #import <HansServer/UIWallPaperManageViewController.h>
@@ -42,6 +44,7 @@
 #import <HansServer/HansRefresher.h>
 #import <HansServer/HansLocal.h>
 #import <HansServer/HansProgressBarView.h>
+
 #pragma mark - NetWork
 #import <HansServer/UIHansNetworkImageView.h>
 

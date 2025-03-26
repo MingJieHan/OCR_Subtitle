@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
     withMinimumTextHeight:(float)minimumHeight
     withRegionOfInterest:(CGRect)regionRect;
 
--(void)OCRImage:(CGImageRef)image
+-(void)OCRImage:(CGImageRef)image withOrientation:(CGImagePropertyOrientation)orientation
         withImageTime:(NSTimeInterval)imageTime
             handler:(OCRGetTextFromImage_Handler)completeHandler;
 @end
