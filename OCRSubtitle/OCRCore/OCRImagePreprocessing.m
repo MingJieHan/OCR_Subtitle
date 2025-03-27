@@ -4,7 +4,7 @@
 //
 //  Created by jia yu on 2024/10/27.
 //
-
+#import <HansServer/HansServer.h>
 #import "OCRImagePreprocessing.h"
 #define UN_SPREAD_FLAG 0
 #define SPREAD_FLAG 1
@@ -426,7 +426,7 @@
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
     CGContextRef context = nil;
     if (orientation == UIImageOrientationUp){
-        //UIImageOrientationUp, 图像向上，把
+        //UIImageOrientationUp, 图像向上
         context = CGBitmapContextCreate(nil, width, height, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
         if (nil == context){
             NSLog(@"stop UIImageOrientationUp here.");
@@ -458,12 +458,30 @@
                                  imageSize.height,
                                  imageSize.width);
         CGContextDrawImage(context, rect, bigImage);
+    }else if (orientation == UIImageOrientationDown){
+        //UIImageOrientationDown 图像需要旋转180度，才能正确显示图片
+        context = CGBitmapContextCreate(nil, width, height, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+        if (nil == context){
+            NSLog(@"stop UIImageOrientationUp here.");
+        }
+        float y = -(1.f - height/imageSize.height - regionOfInterest.origin.y) * imageSize.height;
+        CGRect rect = CGRectMake(-regionOfInterest.origin.x * imageSize.width,
+                                 y,
+                                 imageSize.width,
+                                 imageSize.height);
+        CGContextDrawImage(context, rect, bigImage);
+//        UIImage *i = [[UIImage alloc] initWithCGImage:bigImage];
+//        [i savePNGIntoFile:@"full"];
+//        NSLog(@"debug");
     }else{
         NSLog(@"stop UIImageOrientation UnAvailable.");
     }
     CGImageRef smallImage = CGBitmapContextCreateImage(context);
     CGContextRelease(context);
     CGColorSpaceRelease(colorSpace);
+    
+//    UIImage *i = [[UIImage alloc] initWithCGImage:smallImage];
+//    [i savePNGIntoFile:@"part"];
     return smallImage;
 }
 
