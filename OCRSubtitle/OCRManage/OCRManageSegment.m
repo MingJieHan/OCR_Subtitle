@@ -49,13 +49,10 @@ static OCRManageSegment *staticOCRManageSegment;
 -(NSUInteger)numOfSegments{
     return segments.count;
 }
--(void)addSegment:(OCRSegment *)segment withSubtitleImage:(CGImageRef)subtitleCGImage
-       withSource:(CGImageRef)subtitleSourceCGImage withImageOrientation:(UIImageOrientation)orientation{
+
+-(void)addSegment:(OCRSegment *)segment withfingerPrintImage:(CGImageRef)fingerPrintImage withImageOrientation:(UIImageOrientation)orientation{
     pthread_mutex_lock(&mutex);
-    [segment buildObservationWithCGImage:subtitleCGImage
-                              withSource:subtitleSourceCGImage
-                               saveDebug:NO
-                    withImageOrientation:orientation];
+    [segment buildObservationWithImage:fingerPrintImage andOrient:orientation];
     [segments addObject:segment];
     pthread_mutex_unlock(&mutex);
 }
@@ -63,7 +60,7 @@ static OCRManageSegment *staticOCRManageSegment;
 -(void)clear{
     pthread_mutex_lock(&mutex);
     [segments removeAllObjects];
-    [OCRSegment clearImages];
+    [OCRSegment cleanDebugImages];
     pthread_mutex_unlock(&mutex);
 }
 
@@ -79,7 +76,8 @@ static OCRManageSegment *staticOCRManageSegment;
     return [[NSString alloc] initWithFormat:@"%02ld:%02ld:%02ld,%03ld", hours,minutes,seconds,lessSecond];
 }
 
--(NSString *)exportSRTPartFrom:(OCRSegment *)beginSeg
+//追加一段字幕描述内容， 从index开始输出，到字幕字符串结束，不加换行
+-(NSString *)appendSRTInfoFrom:(OCRSegment *)beginSeg
                             to:(OCRSegment * _Nullable)endSeg
                      withIndex:(NSInteger)index
                      tolerance:(NSUInteger)tolerance{
@@ -124,8 +122,7 @@ static OCRManageSegment *staticOCRManageSegment;
 }
 
 -(BOOL)makeSRT:(NSString *)srtFile withTolerance:(NSUInteger)tolerance{
-    
-    //排序
+    //排序, 因为扫描图像的过程，采用了多线程方式，导致加入到segments中的结果，不能保证是按照时间排序的，这里重新排序。
     [segments sortUsingComparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
         OCRSegment *seg1 = obj1;
         OCRSegment *seg2 = obj2;
@@ -137,7 +134,8 @@ static OCRManageSegment *staticOCRManageSegment;
         }
         return NSOrderedAscending;
     }];
-        
+
+    
     //检查在相同的时间点，是否存在多个字幕
     NSMutableArray *removeArray = [[NSMutableArray alloc] init];
     OCRSegment *previousSeg = nil;
@@ -161,47 +159,41 @@ static OCRManageSegment *staticOCRManageSegment;
     NSMutableString *result = [[NSMutableString alloc] init];
     NSInteger index = 1;
     
-    OCRSegment *firstSeg = nil;
-    OCRSegment *lastSeg = nil;
-    for (OCRSegment *seg in segments){
-        if (nil == firstSeg){
-            firstSeg = seg;
+    //这里是对文字扫描结果的排重算法
+    OCRSegment *beginSeg = nil;
+    OCRSegment *endSeg = nil;
+    for (OCRSegment *currentSeg in segments){
+        if (nil == beginSeg){
+            beginSeg = currentSeg;
             continue;
         }
 
-        if ([self sameOCRString:seg.string withStr2:firstSeg.string]){
+        if ([self sameOCRString:currentSeg.string withStr2:beginSeg.string]){
             //遇到了相同字符串的
-            lastSeg = seg;
+            endSeg = currentSeg;
             continue;
         }
         
-        float distance = [seg distanceWith:lastSeg];
-        float source_distance = [seg sourceDistanceWith:lastSeg];
-        if (distance < 0.3f){
-            NSLog(@"处理后 图片相似性判定为相同字符串:\n%@\n%@", seg.string, lastSeg.string);
-            //判定为相同字符串的
-            lastSeg = seg;
-            continue;
-        }
-
+        //开始图片相似度算法
+        float source_distance = [currentSeg fingerPrintDistanceWith:endSeg];
         if (source_distance < 0.3f){
-            NSLog(@"原图片相似性判定为相同字符串:\n%@\n%@", seg.string, lastSeg.string);
+            NSLog(@"原图片相似性距离为:%.3f, 判定为相同字符串:\n%@\n%@", source_distance, currentSeg.string, endSeg.string);
             //判定为相同字符串的
-            lastSeg = seg;
+            endSeg = currentSeg;
             continue;
         }
         
         //遇到不同字符串输出
-        NSString *srtString = [self exportSRTPartFrom:firstSeg to:lastSeg withIndex:index tolerance:tolerance];
+        NSString *srtString = [self appendSRTInfoFrom:beginSeg to:endSeg withIndex:index tolerance:tolerance];
         [result appendString:srtString];
         [result appendString:@"\n\n"];
         index ++;
-        firstSeg = seg;
-        lastSeg = nil;
+        beginSeg = currentSeg;
+        endSeg = nil;
     }
     
     //append write last seg
-    NSString *lastSRTString = [self exportSRTPartFrom:firstSeg to:lastSeg withIndex:index tolerance:tolerance];
+    NSString *lastSRTString = [self appendSRTInfoFrom:beginSeg to:endSeg withIndex:index tolerance:tolerance];
     [result appendString:lastSRTString];
     [result appendString:@"\n\n"];
     

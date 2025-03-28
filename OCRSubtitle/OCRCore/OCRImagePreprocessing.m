@@ -36,7 +36,6 @@
     NSUInteger board_B_minumim;
     NSUInteger board_B_center;
     NSUInteger board_B_maximum;
-
 }
 @end
 
@@ -227,6 +226,7 @@
 }
 
 -(CGImageRef)createSpreadCGImageFrom:(CGImageRef)image
+                     withOrientation:(UIImageOrientation)orientation
                            textColor:(UIColor *)textColor
                       textTolerances:(float)textTolerances
                           boardColor:(UIColor *)boardColor
@@ -298,23 +298,55 @@
 
     size_t width = CGImageGetWidth(image);
     size_t height = CGImageGetHeight(image);
-    imageSize = CGSizeMake(width, height);
+    if (orientation == UIImageOrientationUp || orientation == UIImageOrientationDown){
+        imageSize = CGSizeMake(width, height);
+    }else{
+        imageSize = CGSizeMake(height, width);
+    }
     
     bytesPerPixel = 1;
-    bytesPerRow = bytesPerPixel * width;
-    rawData = (unsigned char *) calloc(width * height * 4 * 8, sizeof(unsigned char));
+    bytesPerRow = bytesPerPixel * imageSize.width;
+    rawData = (unsigned char *) calloc(imageSize.width * imageSize.height * 4 * 8, sizeof(unsigned char));
     
     CGRect workingPlace;
-    if (regionOfInterest.size.width > 0 && regionOfInterest.size.height > 0){
+    if (regionOfInterest.size.width > 0
+        && regionOfInterest.size.height > 0){
         //有关注的处理区域
         /*
-         regionOfInterest 是从左下角开始的百分比
-         workingPlace 是从坐上角开始的坐标数值
+         regionOfInterest 是从左下角开始的百分比, 表明扫描的目标区域
+         workingPlace 是从坐上角开始的坐标数值，用于填充字的外围颜色，用于减少OCR结果的误差
          */
-        workingPlace = CGRectMake(width * regionOfInterest.origin.x,
-                                  height * (1.f - regionOfInterest.origin.y - regionOfInterest.size.height),
-                                  width * regionOfInterest.size.width,
-                                  height * regionOfInterest.size.height);
+        switch (orientation) {
+            case UIImageOrientationUp:
+                workingPlace = CGRectMake(regionOfInterest.origin.x * imageSize.width,
+                                          (1.f - regionOfInterest.origin.y - regionOfInterest.size.height) * imageSize.height,
+                                          regionOfInterest.size.width * imageSize.width,
+                                          regionOfInterest.size.height * imageSize.height);
+                break;
+            case UIImageOrientationDown:
+                //图像内存内容为180度旋转图
+                workingPlace = CGRectMake((1.f-regionOfInterest.origin.x-regionOfInterest.size.width) * imageSize.width,
+                                          regionOfInterest.origin.y * imageSize.height,
+                                          regionOfInterest.size.width * imageSize.width,
+                                          regionOfInterest.size.height * imageSize.height);
+                break;
+            case UIImageOrientationLeft:
+                //图像内存内容为左转了90度的图像内容
+                workingPlace = CGRectMake(regionOfInterest.origin.y * imageSize.height,
+                                          regionOfInterest.origin.x * imageSize.width,
+                                          regionOfInterest.size.height * imageSize.height,
+                                          regionOfInterest.size.width * imageSize.width);
+                break;
+            case UIImageOrientationRight:
+                //图像内存内容为右转了90度的图像内容
+                workingPlace = CGRectMake((1.f-regionOfInterest.origin.y-regionOfInterest.size.height) * imageSize.height,
+                                          (1.f - regionOfInterest.origin.x-regionOfInterest.size.width) * imageSize.width,
+                                          regionOfInterest.size.height * imageSize.height,
+                                          regionOfInterest.size.width * imageSize.width);
+                break;
+            default:
+                break;
+        }
         for (int i=0;i<width;i++){
             for (int j=0;j<height;j++){
                 map[i][j] = SPREAD_FLAG;
@@ -418,71 +450,6 @@
     CGColorSpaceRelease(colorSpace);
     free(rawData);    
     return spreadImage;
-}
-
--(CGImageRef)createRegionOfInterestImageFromFullImage:(CGImageRef)bigImage withOrientation:(UIImageOrientation)orientation{
-    float width = regionOfInterest.size.width * imageSize.width;
-    float height = regionOfInterest.size.height * imageSize.height;
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    CGContextRef context = nil;
-    if (orientation == UIImageOrientationUp){
-        //UIImageOrientationUp, 图像向上
-        context = CGBitmapContextCreate(nil, width, height, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
-        if (nil == context){
-            NSLog(@"stop UIImageOrientationUp here.");
-        }
-        CGRect rect = CGRectMake(-regionOfInterest.origin.x * imageSize.width,
-                                 -regionOfInterest.origin.y * imageSize.height,
-                                 imageSize.width,
-                                 imageSize.height);
-        CGContextDrawImage(context, rect, bigImage);
-    }else if (orientation == UIImageOrientationRight){
-        //UIImageOrientationRight 图像向右转90度后，才是正确的图片，直接竖直切一片内容返回
-        context = CGBitmapContextCreate(nil, height, width, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
-        if (nil == context){
-            NSLog(@"stop UIImageOrientationRight here.");
-        }
-        CGRect rect = CGRectMake(-(imageSize.height - imageSize.height * regionOfInterest.origin.y - height),
-                                 imageSize.width * regionOfInterest.origin.x,
-                                 imageSize.height,
-                                 imageSize.width);
-        CGContextDrawImage(context, rect, bigImage);
-    }else if (orientation == UIImageOrientationLeft){
-        //UIImageOrientationLeft 图像向左转90度后，才是正确图片，直接竖直切一片内容返回
-        context = CGBitmapContextCreate(nil, height, width, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
-        if (nil == context){
-            NSLog(@"stop UIImageOrientationLeft here.");
-        }
-        CGRect rect = CGRectMake(-imageSize.height * regionOfInterest.origin.y,
-                                 -(imageSize.width - regionOfInterest.origin.x * imageSize.width - width),
-                                 imageSize.height,
-                                 imageSize.width);
-        CGContextDrawImage(context, rect, bigImage);
-    }else if (orientation == UIImageOrientationDown){
-        //UIImageOrientationDown 图像需要旋转180度，才能正确显示图片
-        context = CGBitmapContextCreate(nil, width, height, 8, 4 * bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
-        if (nil == context){
-            NSLog(@"stop UIImageOrientationUp here.");
-        }
-        float y = -(1.f - height/imageSize.height - regionOfInterest.origin.y) * imageSize.height;
-        CGRect rect = CGRectMake(-regionOfInterest.origin.x * imageSize.width,
-                                 y,
-                                 imageSize.width,
-                                 imageSize.height);
-        CGContextDrawImage(context, rect, bigImage);
-//        UIImage *i = [[UIImage alloc] initWithCGImage:bigImage];
-//        [i savePNGIntoFile:@"full"];
-//        NSLog(@"debug");
-    }else{
-        NSLog(@"stop UIImageOrientation UnAvailable.");
-    }
-    CGImageRef smallImage = CGBitmapContextCreateImage(context);
-    CGContextRelease(context);
-    CGColorSpaceRelease(colorSpace);
-    
-//    UIImage *i = [[UIImage alloc] initWithCGImage:smallImage];
-//    [i savePNGIntoFile:@"part"];
-    return smallImage;
 }
 
 -(id)init{

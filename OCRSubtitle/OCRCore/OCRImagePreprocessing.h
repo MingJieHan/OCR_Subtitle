@@ -30,6 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
  最后，白色字包裹的中间，仍有一些像素为图片背景色，通过gate参数，将这些背景像素全部填充为value
  */
 -(CGImageRef)createSpreadCGImageFrom:(CGImageRef)image
+                     withOrientation:(UIImageOrientation)orientation
                            textColor:(UIColor *)textColor
                       textTolerances:(float)textTolerances
                           boardColor:(UIColor *)boardColor
@@ -43,7 +44,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic,readonly) CGRect regionOfInterest;
 
--(CGImageRef)createRegionOfInterestImageFromFullImage:(CGImageRef)spreadCGImage withOrientation:(UIImageOrientation)orientation;
 -(VNFeaturePrintObservation *)observationWithCGImage:(CGImageRef)image;
 @end
 NS_ASSUME_NONNULL_END

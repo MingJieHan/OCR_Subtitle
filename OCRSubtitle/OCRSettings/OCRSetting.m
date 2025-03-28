@@ -27,7 +27,7 @@
 @synthesize subtitleLanguages;
 @synthesize textColor,borderColor;
 @synthesize checkSubtitleCenter;
-
+@dynamic debugMode;
 @dynamic createDate,modifieDate,useDate;
 @dynamic name,note;
 @dynamic imageData;
@@ -80,6 +80,8 @@
     setting.borderColor = [UIColor blackColor];
     setting.textColor = [UIColor whiteColor];
     setting.subtitleLanguages = @[@"zh-Hans", @"en-US"];  //支持简体中文和英文
+    setting.checkSubtitleCenter = YES;
+    setting.debugMode = NO;
     [setting save];
     return setting;
 }
@@ -97,6 +99,8 @@
     setting.borderColor = [UIColor blackColor];
     setting.textColor = [UIColor whiteColor];
     setting.subtitleLanguages = @[@"zh-Hans"];
+    setting.checkSubtitleCenter = YES;
+    setting.debugMode = NO;
     [setting save];
     return setting;
 }

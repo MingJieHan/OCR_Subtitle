@@ -18,8 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(BOOL)loadSegments;
 
 -(NSUInteger)numOfSegments;
--(void)addSegment:(OCRSegment *)segment withSubtitleImage:(CGImageRef)subtitleCGImage
-       withSource:(CGImageRef)subtitleSourceCGImage withImageOrientation:(UIImageOrientation)orientation;
+-(void)addSegment:(OCRSegment *)segment withfingerPrintImage:(CGImageRef)fingerPrintImage withImageOrientation:(UIImageOrientation)orientation;
 -(void)clear;
 
 //Tolerance 字幕准许的差

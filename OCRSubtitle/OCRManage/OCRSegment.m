@@ -15,10 +15,7 @@
 #define KEY_OCRSegment_Y @"y"
 #define KEY_OCRSegment_Width @"width"
 #define KEY_OCRSegment_Height @"height"
-#define KEY_OCRSegment_ImageFile @"imageFile"
 #define KEY_OCRSegment_SourceImageFile @"sourceImageFile"
-
-#define KEY_PredImage_Observation @"PredObservation"
 #define KEY_SourceImage_Observation @"SourceObservation"
 
 @implementation OCRSegment
@@ -26,10 +23,8 @@
 @synthesize confidence;
 @synthesize x,y,width,height;
 @synthesize t;
-@synthesize subtitleImageFile;
-@synthesize subtitleSourceImageFile;
-@synthesize sourceImageObservation;
-@synthesize predImageObservation;
+@synthesize fingerPrintImageFile;
+@synthesize fingerPrintObservation;
 
 + (BOOL)supportsSecureCoding {
     return TRUE;
@@ -62,8 +57,7 @@
     [dict setValue:string forKey:KEY_OCRSegment_String];
     [dict setValue:[NSNumber numberWithFloat:confidence] forKey:KEY_OCRSegment_Confidence];
     [dict setValue:[NSNumber numberWithFloat:t] forKey:KEY_OCRSegment_Time];
-    [dict setValue:subtitleImageFile forKey:KEY_OCRSegment_ImageFile];
-    [dict setValue:subtitleSourceImageFile forKey:KEY_OCRSegment_SourceImageFile];
+    [dict setValue:fingerPrintImageFile forKey:KEY_OCRSegment_SourceImageFile];
     return dict;
 }
 
@@ -77,8 +71,7 @@
         y = [[dict valueForKey:KEY_OCRSegment_Y] floatValue];
         width = [[dict valueForKey:KEY_OCRSegment_Width] floatValue];
         height = [[dict valueForKey:KEY_OCRSegment_Height] floatValue];
-        subtitleImageFile = [dict valueForKey:KEY_OCRSegment_ImageFile];
-        subtitleSourceImageFile = [dict valueForKey:KEY_OCRSegment_SourceImageFile];
+        fingerPrintImageFile = [dict valueForKey:KEY_OCRSegment_SourceImageFile];
     }
     return self;
 }
@@ -108,41 +101,12 @@
     return res;
 }
 
--(void)buildObservationWithCGImage:(CGImageRef)subtitleCGImage
-                        withSource:(CGImageRef)subtitleSourceCGImage
-                         saveDebug:(BOOL)savePNGFile
-              withImageOrientation:(UIImageOrientation)orientation{
-    NSString *file = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
-    file = [file stringByAppendingPathComponent:@"images"];
-    if (NO == [NSFileManager.defaultManager fileExistsAtPath:file]){
-        [NSFileManager.defaultManager createDirectoryAtPath:file withIntermediateDirectories:YES attributes:nil error:nil];
-    }
-    
-    if (savePNGFile){
-        NSString *name = [[NSString alloc] initWithFormat:@"%@.png", string];
-        subtitleImageFile = [file stringByAppendingPathComponent:name];
-        if (NO == [NSFileManager.defaultManager fileExistsAtPath:subtitleImageFile]){
-            UIImage *im = [[UIImage alloc] initWithCGImage:subtitleCGImage scale:1.f orientation:orientation];
-            [UIImagePNGRepresentation(im) writeToFile:subtitleImageFile atomically:YES];
-        }
-    }
-    if (subtitleCGImage){
-        predImageObservation = [self observeWithImage:subtitleCGImage];
-    }else{
-        predImageObservation = nil;
-    }
-    
-    if (savePNGFile){
-        NSString *name = [[NSString alloc] initWithFormat:@"%@_source.png", string];
-        subtitleSourceImageFile = [file stringByAppendingPathComponent:name];
-        UIImage *image_source = [[UIImage alloc] initWithCGImage:subtitleSourceCGImage scale:1.f orientation:orientation];
-        [UIImagePNGRepresentation(image_source) writeToFile:subtitleSourceImageFile atomically:YES];
-    }
-    sourceImageObservation = [self observeWithImage:subtitleSourceCGImage];
+-(void)buildObservationWithImage:(CGImageRef)fingerPrintImage andOrient:(UIImageOrientation)orientation{
+    fingerPrintObservation = [self observeWithImage:fingerPrintImage];
     return;
 }
 
-+(void)clearImages{
++(void)cleanDebugImages{
     NSString *path = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
     path = [path stringByAppendingPathComponent:@"images"];
     NSArray *files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:path error:nil];
@@ -165,32 +129,20 @@
     return obs;
 }
 
--(VNFeaturePrintObservation *)observePredImage{
-    UIImage *image = [[UIImage alloc] initWithContentsOfFile:subtitleSourceImageFile];
+-(VNFeaturePrintObservation *)observefingerPrint{
+    UIImage *image = [[UIImage alloc] initWithContentsOfFile:fingerPrintImageFile];
     return [self observeWithImage:image.CGImage];
 }
 
--(VNFeaturePrintObservation *)observeSourceImage{
-    UIImage *image = [[UIImage alloc] initWithContentsOfFile:subtitleImageFile];
-    return [self observeWithImage:image.CGImage];
-}
-
--(float)sourceDistanceWith:(OCRSegment *)otherSegment{
-//    VNFeaturePrintObservation *obs1 = [self observeSourceImage];
-//    VNFeaturePrintObservation *obs2 = [otherSegment observeSourceImage];
+-(float)fingerPrintDistanceWith:(OCRSegment *)otherSegment{
     float distance = 1.f;
-    [sourceImageObservation computeDistance:&distance toFeaturePrintObservation:otherSegment.sourceImageObservation error:nil];
+    [fingerPrintObservation computeDistance:&distance toFeaturePrintObservation:otherSegment.    fingerPrintObservation error:nil];
     return distance;
 }
 
--(float)distanceWith:(OCRSegment *)otherSegment{
-//    VNFeaturePrintObservation *obs1 = [self observePredImage];
-//    VNFeaturePrintObservation *obs2 = [otherSegment observePredImage];
-    float distance = 1.f;
-    [predImageObservation computeDistance:&distance toFeaturePrintObservation:otherSegment.predImageObservation error:nil];
-    return distance;
+-(NSString *)description{
+    return [NSString stringWithFormat:@"%@", self.string];
 }
-
 
 #pragma mark - NSSecureCoding
 - (void)encodeWithCoder:(nonnull NSCoder *)coder {
@@ -201,10 +153,8 @@
     [coder encodeFloat:y forKey:KEY_OCRSegment_Y];
     [coder encodeFloat:width forKey:KEY_OCRSegment_Width];
     [coder encodeFloat:height forKey:KEY_OCRSegment_Height];
-    [coder encodeObject:predImageObservation forKey:KEY_PredImage_Observation];
-    [coder encodeObject:sourceImageObservation forKey:KEY_SourceImage_Observation];
-    [coder encodeObject:subtitleImageFile forKey:KEY_OCRSegment_ImageFile];
-    [coder encodeObject:subtitleSourceImageFile forKey:KEY_OCRSegment_SourceImageFile];
+    [coder encodeObject:fingerPrintObservation forKey:KEY_SourceImage_Observation];
+    [coder encodeObject:fingerPrintImageFile forKey:KEY_OCRSegment_SourceImageFile];
     return;
 }
 
@@ -218,10 +168,8 @@
         y = [coder decodeFloatForKey:KEY_OCRSegment_Y];
         width = [coder decodeFloatForKey:KEY_OCRSegment_Width];
         height = [coder decodeFloatForKey:KEY_OCRSegment_Height];
-        predImageObservation = [coder decodeObjectForKey:KEY_PredImage_Observation];
-        sourceImageObservation = [coder decodeObjectForKey:KEY_SourceImage_Observation];
-        subtitleImageFile = [coder decodeObjectForKey:KEY_OCRSegment_ImageFile];
-        subtitleSourceImageFile = [coder decodeObjectForKey:KEY_OCRSegment_SourceImageFile];
+        fingerPrintObservation = [coder decodeObjectForKey:KEY_SourceImage_Observation];
+        fingerPrintImageFile = [coder decodeObjectForKey:KEY_OCRSegment_SourceImageFile];
     }
     return self;
 }

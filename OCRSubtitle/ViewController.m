@@ -172,7 +172,6 @@ OCRHistoryCell *openingCell;
     return;
 }
 
-
 -(void)viewDidAppear:(BOOL)animated{
     [super viewDidAppear:animated];
     
@@ -298,40 +297,16 @@ UIDocumentBrowserViewController *documentBrowserVC;
     return;
 }
 
--(CGImagePropertyOrientation)convertOrientation:(UIImageOrientation)imageOrientation{
-    switch (imageOrientation) {
-        case UIImageOrientationUp:
-            return kCGImagePropertyOrientationUp;
-        case UIImageOrientationDown:
-            return kCGImagePropertyOrientationDown;
-        case UIImageOrientationLeft:
-            return kCGImagePropertyOrientationLeft;
-        case UIImageOrientationRight:
-            return kCGImagePropertyOrientationRight;
-        case UIImageOrientationUpMirrored:
-            return kCGImagePropertyOrientationUpMirrored;
-        case UIImageOrientationDownMirrored:
-            return kCGImagePropertyOrientationDownMirrored;
-        case UIImageOrientationLeftMirrored:
-            return kCGImagePropertyOrientationLeftMirrored;
-        case UIImageOrientationRightMirrored:
-            return kCGImagePropertyOrientationRightMirrored;
-        default:
-            break;
-    }
-    return kCGImagePropertyOrientationUp;
-}
-
 -(void)OCRSampleInThread:(SampleObject *)sample threadNum:(int)threadIndex{
     CGImageRef sourceCGImage = [sample createCGImage];
-    UIImageOrientation orientation = [OCRSubtitleManage imageOrientionFromCGAffineTransform:sample.transform];
+    UIImageOrientation orientation = [HansImageTools imageOrientionFromVideoTransform:sample.transform];
     
     OCRImagePreprocessing *imageWorker = [imagePre objectAtIndex:threadIndex];
     
-    CGImageRef predImage = nil;
-    
+    CGImageRef predFullImage = nil;
     if (setting.textColor && setting.borderColor){
-        predImage = [imageWorker createSpreadCGImageFrom:sourceCGImage
+        predFullImage = [imageWorker createSpreadCGImageFrom:sourceCGImage
+                                             withOrientation:orientation
                                         textColor:setting.textColor
                                     textTolerances:0.1f
                                         boardColor:setting.borderColor
@@ -340,45 +315,24 @@ UIDocumentBrowserViewController *documentBrowserVC;
         imageWorker.imageSize = CGSizeMake([setting.videoWidth integerValue], [setting.videoHeight integerValue]);
     }
     
-    CGImageRef subtitleSourceImage = nil;
-    subtitleSourceImage = [imageWorker createRegionOfInterestImageFromFullImage:sourceCGImage withOrientation:orientation];
-    if (nil == subtitleSourceImage){
-        NSLog(@"Stop debug.");
-        return;
-    }
-//    UIImage *i = [[UIImage alloc] initWithCGImage:sourceCGImage];
-//    [i savePNGIntoFile:@"test"];
-    
-    CGImageRef subtitleImage = nil;
-    if (predImage){
-        subtitleImage = [imageWorker createRegionOfInterestImageFromFullImage:predImage withOrientation:orientation];
-    }
-    
-// 重载入测试开始
-//    UIImage *i = [[UIImage alloc] initWithCGImage:subtitleSourceImage];
-//    NSString *file = [[NSString alloc] initWithFormat:@"%@/Documents/Buffer_%d.png", NSHomeDirectory(),threadIndex];
-//    [NSFileManager.defaultManager removeItemAtPath:file error:nil];
-//    [UIImagePNGRepresentation(i) writeToFile:file atomically:YES];
-//    UIImage *readed = [[UIImage alloc] initWithContentsOfFile:file];
-//重载入测试结束
     progressVC.image = sourceCGImage;
     progressVC.imageOrientation = orientation;
     
-    CGImageRef scanImage = predImage;
+    CGImageRef scanImage = predFullImage;
     if (nil == scanImage){
         scanImage = sourceCGImage;
     }
-        
-    [[textFromImage objectAtIndex:threadIndex] OCRImage:scanImage
-                                        withOrientation:[self convertOrientation:orientation]
-                                          withImageTime:[sample imageTime]
-                                                handler:^(NSArray<OCRSegment *> * _Nonnull results) {
+    OCRGetTextFromImage *scanTextWorker = [textFromImage objectAtIndex:threadIndex];
+    [scanTextWorker OCRImage:scanImage
+             withOrientation:[HansImageTools CGOrientationFromUIImageOrientation:orientation]
+               withImageTime:[sample imageTime]
+                     handler:^(NSArray<OCRSegment *> * _Nonnull results) {
         for (OCRSegment *seg in results){
             if (seg.confidence <= 0.4f){
                 NSLog(@"信心不足 %.2f, 丢弃:%@",seg.confidence, seg.string);
                 continue;
             }
-            
+                        
             if (self->setting.checkSubtitleCenter){
                 float err = fabsf([seg centerOffset]);
                 if (err >= 0.02f){
@@ -388,38 +342,45 @@ UIDocumentBrowserViewController *documentBrowserVC;
                 }
             }
             
+            //显示进度
             NSLog(@"%.2f sec:%@", seg.t, seg.string);
             self->progressVC.gottedString = seg.string;
-//            NSString *debugString = @"职亚个人不缴纳工伤保险费";
-//            if ([seg.string isEqualToString:debugString]){
-//                [self saveCGImage:cgImage withName:[NSString stringWithFormat:@"%.2f_source_%@", seg.t, seg.string]];
-//                [self saveCGImage:predImage withName:[NSString stringWithFormat:@"%.2f_pred_%@", seg.t, seg.string]];
-//                NSLog(@"Debug text");
-//            }
             self->thumbnailImage = [[UIImage alloc] initWithCGImage:sourceCGImage scale:1.f orientation:orientation];
+            
+
+            //识别文字位置的图片
+            CGRect rect = CGRectMake(imageWorker.regionOfInterest.origin.x + imageWorker.regionOfInterest.size.width * seg.x,
+                                     imageWorker.regionOfInterest.origin.y + imageWorker.regionOfInterest.size.height * seg.y,
+                                     imageWorker.regionOfInterest.size.width * seg.width,
+                                     imageWorker.regionOfInterest.size.height * seg.height);
+            CGImageRef fingerprintImage = [HansImageTools createRegionOfInterestImageFromFullImage:scanImage
+                                                                                    withTargetRect:rect
+                                                                                   withOrientation:orientation];
+            if (self->setting.debugMode){
+                NSString *file = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
+                file = [file stringByAppendingPathComponent:@"images"];
+                if (NO == [NSFileManager.defaultManager fileExistsAtPath:file]){
+                    [NSFileManager.defaultManager createDirectoryAtPath:file withIntermediateDirectories:YES attributes:nil error:nil];
+                }
+                NSString *name = [[NSString alloc] initWithFormat:@"%@_finger_%d.png", seg.string, threadIndex];
+                NSString *fingerPrintImageFile = [file stringByAppendingPathComponent:name];
+                UIImage *image_source = [[UIImage alloc] initWithCGImage:fingerprintImage scale:1.f orientation:orientation];
+                [UIImagePNGRepresentation(image_source) writeToFile:fingerPrintImageFile atomically:YES];
+            }
             [OCRManageSegment.shared addSegment:seg
-                       withSubtitleImage:subtitleImage
-                                     withSource:subtitleSourceImage
-                           withImageOrientation:orientation];
+                            withfingerPrintImage:fingerprintImage
+                    withImageOrientation:orientation];
+            CGImageRelease(fingerprintImage);
         }
+        
         float progress = [sample imageTime]/(self->bufferFromVideo.duration.value/self->bufferFromVideo.duration.timescale);
         if (progress > 1.f){
             progress = 1.f;
         }
         self->progressVC.progress = progress;
     }];
-    CGImageRelease(subtitleImage);
-    CGImageRelease(subtitleSourceImage);
     CGImageRelease(sourceCGImage);
-    CGImageRelease(predImage);
-}
-
--(void)saveCGImage:(CGImageRef)cgImage withName:(NSString *)name{
-    UIImage *i = [[UIImage alloc] initWithCGImage:cgImage];
-    NSString *file = [NSHomeDirectory() stringByAppendingFormat:@"/Documents/%@.png", name];
-    [NSFileManager.defaultManager removeItemAtPath:file error:nil];
-    [UIImagePNGRepresentation(i) writeToFile:file atomically:YES];
-    return;
+    CGImageRelease(predFullImage);
 }
 
 -(void)OCRTextThread:(NSNumber *)threadNum{
@@ -433,12 +394,14 @@ UIDocumentBrowserViewController *documentBrowserVC;
             }
             [NSThread sleepForTimeInterval:0.1];
         }else{
+//            NSLog(@"%d scan thread start.", num);
             [self OCRSampleInThread:sample threadNum:num];
+//            NSLog(@"%d scan thread end.", num);
         }
     }
 }
 
--(void)getVideoThread{
+-(void)loadVideoThread{
     loadVideoCompleted = NO;
     float lastSecond = -1.f;
     while (NO == loadVideoCompleted) {
@@ -458,7 +421,6 @@ UIDocumentBrowserViewController *documentBrowserVC;
                 continue;
             }
             lastSecond = theSecond;
-            
             [OCRManageSegment.shared appendSample:sampleBuffer withTransform:bufferFromVideo.videoTransform];
             while ([OCRManageSegment.shared numOfCurrentSamples] > 20) {
                 [NSThread sleepForTimeInterval:0.1];
@@ -494,6 +456,7 @@ UIDocumentBrowserViewController *documentBrowserVC;
         newSetting.videoHeight = [NSNumber numberWithFloat:vc.videoSize.height];
         newSetting.passTopRate = vc.passTopRate;
         newSetting.heightRate = vc.heightRate;
+        newSetting.checkSubtitleCenter = YES;
         newSetting.subtitleLanguages = @[vc.scaningLanguageIdentifier];
         [newSetting save];
         
@@ -588,11 +551,13 @@ UIDocumentBrowserViewController *documentBrowserVC;
     }
     
     [NSThread detachNewThreadWithBlock:^{
-        [self getVideoThread];
+        [self loadVideoThread];
     }];
     threads = [[NSMutableArray alloc] init];
     for (int i=0;i<MAXIMUM_THREAD;i++){
-        NSThread *a = [[NSThread alloc] initWithTarget:self selector:@selector(OCRTextThread:) object:[NSNumber numberWithInt:i]];
+        NSThread *a = [[NSThread alloc] initWithTarget:self
+                                              selector:@selector(OCRTextThread:)
+                                                object:[NSNumber numberWithInt:i]];
         [a start];
         [threads addObject:a];
     }
@@ -828,6 +793,7 @@ UIView *cellView;
         }];
         
         CGImageRef resImage = [[self->imagePre objectAtIndex:0] createSpreadCGImageFrom:image.CGImage
+                                                                        withOrientation:image.imageOrientation
                                                     textColor:[UIColor whiteColor]
                                                 textTolerances:0.1f
                                                     boardColor:[UIColor blackColor]
@@ -872,6 +838,7 @@ UIView *cellView;
                 UIImage *image = [[UIImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"test" ofType:@"png"]];
                 OCRImagePreprocessing *imageThreadPre = [[OCRImagePreprocessing alloc] initWithRegionOfInterest:[self->setting regionOfInterest]];
                 CGImageRef resImage = [imageThreadPre createSpreadCGImageFrom:image.CGImage
+                                                              withOrientation:image.imageOrientation
                                                                     textColor:[UIColor whiteColor]
                                                                textTolerances:0.1f
                                                                    boardColor:[UIColor blackColor]

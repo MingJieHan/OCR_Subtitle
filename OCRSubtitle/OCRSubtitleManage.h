@@ -25,6 +25,5 @@ NS_ASSUME_NONNULL_BEGIN
 -(BOOL)save;
 -(BOOL)removeItem:(NSManagedObject *)item;
 
-+(UIImageOrientation)imageOrientionFromCGAffineTransform:(CGAffineTransform)txf;
 @end
 NS_ASSUME_NONNULL_END

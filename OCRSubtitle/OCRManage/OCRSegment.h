@@ -19,11 +19,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) float width;
 @property (nonatomic, readonly) float height;
 @property (nonatomic) NSTimeInterval t;
-@property (nonatomic, readonly) VNFeaturePrintObservation *sourceImageObservation;
-@property (nonatomic, readonly) VNFeaturePrintObservation *predImageObservation;
-
-@property (nonatomic, readonly) NSString *subtitleImageFile;
-@property (nonatomic, readonly) NSString *subtitleSourceImageFile;
+@property (nonatomic, readonly) VNFeaturePrintObservation *fingerPrintObservation;
+@property (nonatomic, readonly) NSString *fingerPrintImageFile;
 
 -(id)initWithVNRecognized:(VNRecognizedText *)textObject;
 -(NSDictionary *)dictionary;
@@ -34,18 +31,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 //返回文字在正中间的便宜率 -0.5 -> 0.5
 -(float)centerOffset;
--(VNFeaturePrintObservation *)observePredImage;
--(VNFeaturePrintObservation *)observeSourceImage;
+-(VNFeaturePrintObservation *)observefingerPrint;
 
 //return 完全相同 0.f -> 1.f 不同，建议 > 0.35时，判定为字幕更换了
--(float)distanceWith:(OCRSegment *)otherSegment;
--(float)sourceDistanceWith:(OCRSegment *)otherSegment;
+-(float)fingerPrintDistanceWith:(OCRSegment *)otherSegment;
 
--(void)buildObservationWithCGImage:(CGImageRef)subtitleCGImage
-                        withSource:(CGImageRef)subtitleSourceCGImage
-                         saveDebug:(BOOL)savePNGFile
-              withImageOrientation:(UIImageOrientation)orientation;
-+(void)clearImages;
+-(void)buildObservationWithImage:(CGImageRef)fingerPrintImage andOrient:(UIImageOrientation)orientation;
++(void)cleanDebugImages;
 
 #pragma mark - Archiver
 +(BOOL)archivedSave:(NSMutableArray <OCRSegment *>*)arrayFrom;

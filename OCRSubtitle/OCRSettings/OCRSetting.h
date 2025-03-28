@@ -28,6 +28,9 @@ NS_ASSUME_NONNULL_BEGIN
 //是否检查字幕居中，开启后，丢弃不居中的字幕。这样做可以提高准确性，但要求字幕生成市，必须选择字幕居中。
 @property (nonatomic) BOOL checkSubtitleCenter;
 
+//开启调试模式，此模式下速度会慢一些，但会存储过程中的文件，如提取文字的局部图片等
+@property (nonatomic) BOOL debugMode;   //default is NO
+
 -(CGRect)regionOfInterest;      //从左下角开始，与OC其他位置计算不同
 -(float)minimumFrameSpacing;    //Unit is S
 -(NSUInteger)tolerance;         //SRT 时间输出的准许差 Unit is mS

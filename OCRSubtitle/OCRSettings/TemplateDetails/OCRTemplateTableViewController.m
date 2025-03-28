@@ -18,6 +18,8 @@
 #define CELL_KEY_TextColor @"CELL_KEY_TextColor"
 #define CELL_KEY_BorderColor @"CELL_KEY_BorderColor"
 #define CELL_KEY_SubtitleCenter @"CELL_KEY_SubtitleCenter"
+#define CELL_KEY_DEBUGMODE @"CELL_KEY_DEBUGMODE"
+
 
 @interface OCRTemplateTableViewController ()<UIColorPickerViewControllerDelegate>{
     UILabel *rateLabel;
@@ -27,6 +29,7 @@
     HansBorderLabel *textDemoLabel;
     HansBorderLabel *borderDemoLabel;
     UISwitch *subtitleCenterSwitch;
+    UISwitch *debugModeSwitch;
     BOOL changed;
 }
 @end
@@ -177,7 +180,11 @@
     changed = YES;
     return;
 }
-
+-(void)debugModeChanged:(UISwitch *)switchObject{
+    setting.debugMode = switchObject.on;
+    changed = YES;
+    return;
+}
 -(NSString *)identifierWith:(NSIndexPath *)indexPath{
     switch (indexPath.row) {
         case 0:return CELL_KEY_NAME;
@@ -186,6 +193,7 @@
         case 3:return CELL_KEY_TextColor;
         case 4:return CELL_KEY_BorderColor;
         case 5:return CELL_KEY_SubtitleCenter;
+        case 6:return CELL_KEY_DEBUGMODE;
         default:
             break;
     }
@@ -198,7 +206,7 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 6;
+    return 7;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -267,14 +275,22 @@
             subtitleCenterSwitch = [[UISwitch alloc] initWithFrame:CGRectMake((cell.frame.size.width - 130.f), 7.5f, 60.f, 40.f)];
             subtitleCenterSwitch.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
             [subtitleCenterSwitch addTarget:self action:@selector(alignmentCenterChanged:) forControlEvents:UIControlEventValueChanged];
-//            cell.contentView.userInteractionEnabled = YES;
             [cell addSubview:subtitleCenterSwitch];
         }
         subtitleCenterSwitch.on = setting.checkSubtitleCenter;
+    }else if ([identifier isEqualToString:CELL_KEY_DEBUGMODE]){
+        cell.textLabel.text = NSLocalizedString(@"Debug Mode", nil);
+        cell.detailTextLabel.text = @"";
+        if (nil == debugModeSwitch){
+            debugModeSwitch = [[UISwitch alloc] initWithFrame:CGRectMake((cell.frame.size.width - 130.f), 7.5f, 60.f, 40.f)];
+            debugModeSwitch.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+            [debugModeSwitch addTarget:self action:@selector(debugModeChanged:) forControlEvents:UIControlEventValueChanged];
+            [cell addSubview:debugModeSwitch];
+        }
+        debugModeSwitch.on = setting.debugMode;
     }
     return cell;
 }
-
 
 -(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
     NSString *identifier = [self identifierWith:indexPath];

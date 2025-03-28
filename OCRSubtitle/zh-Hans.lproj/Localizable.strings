@@ -52,4 +52,5 @@
 
 
 "Subtitle Alignment" = "字幕位置";
-"Center" = "居中";
+"Center" = "居中检查";
+"Debug Mode" = "调试模式";

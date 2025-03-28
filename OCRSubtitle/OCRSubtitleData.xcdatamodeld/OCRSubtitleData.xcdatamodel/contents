@@ -12,6 +12,7 @@
         <attribute name="borderColorString" optional="YES" attributeType="String"/>
         <attribute name="checkSubtitleCenter" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="createDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="debugMode" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="heightRate" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="imageData" optional="YES" attributeType="Binary"/>
         <attribute name="modifieDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>

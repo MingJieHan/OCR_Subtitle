@@ -9,7 +9,7 @@
 #import <CoreImage/CoreImage.h>
 #import <AVFoundation/AVFoundation.h>
 #import "OCRSubtitleManage.h"
-
+#import <HansServer/HansServer.h>
 @interface OCRGetSampleBuffersFromVideo(){
     AVAssetReader *assetReader;
     AVAssetReaderTrackOutput *readerVideoTrackOutput;
@@ -110,7 +110,7 @@
 }
 
 -(CGSize)sizeAfterOrientation{
-    UIImageOrientation oriention = [OCRSubtitleManage imageOrientionFromCGAffineTransform:videoTransform];
+    UIImageOrientation oriention = [HansImageTools imageOrientionFromVideoTransform:videoTransform];
     if (oriention == UIImageOrientationLeft || oriention == UIImageOrientationRight){
         return CGSizeMake(videoSize.height, videoSize.width);
     }
