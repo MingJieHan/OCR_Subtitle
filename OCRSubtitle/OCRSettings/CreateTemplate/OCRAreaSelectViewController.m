@@ -217,7 +217,7 @@
 
 -(void)nameButtonAction{
     HansLineStringEditViewController *v = [[HansLineStringEditViewController alloc] init];
-    v.title = @"Template Name";
+    v.title = NSLocalizedString(@"Template Name" , nil);
     v.defaultValue = suggestName;
     v.handler = ^(BOOL changed, NSString * _Nullable value) {
         self->suggestName = value;

@@ -23,6 +23,8 @@
 "Select Language" = "Select Language";
 "Thumbnail Time:" = "Thumbnail Time:";
 "Template Name:" = "Template Name:";
+"Template Name" = "Template Name";
+
 "Cancel" = "Cancel";
 "Error" = "Error";
 "Next Step?" = "Next Step?";
@@ -54,3 +56,15 @@
 "Subtitle Alignment" = "Subtitle Alignment";
 "Center" = "Center";
 "Debug Mode" = "Debug Mode";
+"Template Editing" = "Template Editing";
+"It is recommended that when the video resolution is higher than 1920x1080, after setting the text color and border color, the background image of the scan area will be filled during scanning to further improve the result quality." = "It is recommended that when the video resolution is higher than 1920x1080, after setting the text color and border color, the background image of the scan area will be filled during scanning to further improve the result quality.";
+
+"Discard scanned text results that are not centered." = "Discard scanned text results that are not centered.";
+
+"In order to improve this App, a small amount of storage space is used to store the scanning process information." = "In order to improve this App, a small amount of storage space is used to store the scanning process information.";
+
+"Basic:" = "Basic:";
+"Advanced:" = "Advanced:";
+"Developer:" = "Developer:";
+"On" = "On";
+"Off" = "Off";

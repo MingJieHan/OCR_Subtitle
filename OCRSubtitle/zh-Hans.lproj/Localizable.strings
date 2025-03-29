@@ -23,6 +23,7 @@
 "Select Language" = "选择语言";
 "Thumbnail Time:" = "缩略图时间:";
 "Template Name:" = "模版名称:";
+"Template Name" = "模版名称";
 "Cancel" = "取消";
 "Error" = "错误";
 "Next Step?" = "下一步?";
@@ -54,3 +55,15 @@
 "Subtitle Alignment" = "字幕位置";
 "Center" = "居中检查";
 "Debug Mode" = "调试模式";
+"Template Editing" = "模版编辑";
+"It is recommended that when the video resolution is higher than 1920x1080, after setting the text color and border color, the background image of the scan area will be filled during scanning to further improve the result quality." = "建议当视频分辨率高于1920x1080时，设置文字颜色和边框颜色后，扫描时会填充扫描区域的背景图，以进一步提高结果质量。";
+
+"Discard scanned text results that are not centered." = "丢弃未居中的扫描文本结果。";
+
+"In order to improve this App, a small amount of storage space is used to store the scanning process information." = "为了完善本应用程序，会占用少量的存储空间来存储扫描过程信息。";
+
+"Basic:" = "基本:";
+"Advanced:" = "高级:";
+"Developer:" = "开发者:";
+"On" = "开";
+"Off" = "关";

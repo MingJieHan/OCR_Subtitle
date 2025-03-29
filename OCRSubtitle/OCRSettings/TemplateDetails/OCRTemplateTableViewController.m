@@ -28,8 +28,8 @@
     UIColorPickerViewController *borderColorPicker;
     HansBorderLabel *textDemoLabel;
     HansBorderLabel *borderDemoLabel;
-    UISwitch *subtitleCenterSwitch;
-    UISwitch *debugModeSwitch;
+    UIHansSwitchView *subtitleCenterView;
+    UIHansSwitchView *debugModeSwitch;
     BOOL changed;
 }
 @end
@@ -40,15 +40,11 @@
 
 #pragma mark - System
 -(id)initWithSetting:(OCRSetting *)_setting{
-    self = [super initWithStyle:UITableViewStyleGrouped];
+    self = [super initWithStyle:UITableViewStyleInsetGrouped];
     if (self){
         setting = _setting;
         changed = NO;
-        if (nil == setting.name){
-            self.title = @"Unname";
-        }else{
-            self.title = setting.name;
-        }
+        self.title = NSLocalizedString(@"Template Editing", nil);
     }
     return self;
 }
@@ -82,7 +78,7 @@
 -(void)rateChanged:(id)sender{
     setting.rate = (int)rateSlider.value;
     if (rateLabel){
-        rateLabel.text = [NSString stringWithFormat:@"%d t/S", setting.rate];
+        rateLabel.text = [NSString stringWithFormat:NSLocalizedString(@"%d t/S", nil), setting.rate];
     }
     changed = YES;
     [setting save];
@@ -92,6 +88,7 @@
 - (void)colorPickerViewControllerDidFinish:(UIColorPickerViewController *)viewController{
     return;
 }
+
 -(void)closeColorSelector{
     changed = YES;
     [setting save];
@@ -158,7 +155,7 @@
 
 -(void)setName{
     HansLineStringEditViewController *v = [[HansLineStringEditViewController alloc] init];
-    v.title = @"Template Name";
+    v.title = NSLocalizedString(@"Template Name", nil);
     v.defaultValue = setting.name;
     v.handler = ^(BOOL _changed, NSString * _Nullable value) {
         if (_changed){
@@ -175,42 +172,63 @@
     return;
 }
 
--(void)alignmentCenterChanged:(UISwitch *)switchObject{
-    setting.checkSubtitleCenter = switchObject.on;
-    changed = YES;
-    return;
-}
--(void)debugModeChanged:(UISwitch *)switchObject{
-    setting.debugMode = switchObject.on;
-    changed = YES;
-    return;
-}
 -(NSString *)identifierWith:(NSIndexPath *)indexPath{
-    switch (indexPath.row) {
-        case 0:return CELL_KEY_NAME;
-        case 1:return CELL_KEY_LANGUAGES;
-        case 2:return CELL_KEY_RATE;
-        case 3:return CELL_KEY_TextColor;
-        case 4:return CELL_KEY_BorderColor;
-        case 5:return CELL_KEY_SubtitleCenter;
-        case 6:return CELL_KEY_DEBUGMODE;
+    switch (indexPath.section) {
+        case 0:{
+            switch (indexPath.row) {
+                case 0:return CELL_KEY_NAME;
+                case 1:return CELL_KEY_LANGUAGES;
+                case 2:return CELL_KEY_RATE;
+                default:
+                    break;
+            }
+            break;}
+        case 1:{
+            switch (indexPath.row) {
+                case 0:return CELL_KEY_TextColor;
+                case 1:return CELL_KEY_BorderColor;
+                case 2:return CELL_KEY_SubtitleCenter;
+                default:
+                    break;
+            }
+            break;
+        }
+        case 2:{
+            switch (indexPath.row) {
+                case 0:return CELL_KEY_DEBUGMODE;
+                default:
+                    break;
+            }
+            break;
+        }
         default:
             break;
     }
-    return @"ccc";
+    return @"";
 }
 
 #pragma mark - Table view data source
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 1;
+    return 3;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 7;
+    switch (section) {
+        case 0:
+            return 3;
+        case 1:
+            return 3;
+        case 2:
+            return 1;
+        default:
+            break;
+    }
+    return 0;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     NSString *identifier = [self identifierWith:indexPath];
+    OCRTemplateTableViewController * __strong strongSelf = self;
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
     if (nil == cell){
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue2 reuseIdentifier:identifier];
@@ -271,20 +289,37 @@
     }else if ([identifier isEqualToString:CELL_KEY_SubtitleCenter]){
         cell.textLabel.text = NSLocalizedString(@"Subtitle Alignment", nil);
         cell.detailTextLabel.text = NSLocalizedString(@"Center", nil);
-        if (nil == subtitleCenterSwitch){
-            subtitleCenterSwitch = [[UISwitch alloc] initWithFrame:CGRectMake((cell.frame.size.width - 130.f), 7.5f, 60.f, 40.f)];
-            subtitleCenterSwitch.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
-            [subtitleCenterSwitch addTarget:self action:@selector(alignmentCenterChanged:) forControlEvents:UIControlEventValueChanged];
-            [cell addSubview:subtitleCenterSwitch];
+        if (nil == subtitleCenterView){
+            subtitleCenterView = [[UIHansSwitchView alloc] init];
+            [subtitleCenterView setFrame:CGRectMake((cell.frame.size.width - 90.f), 5.f, 80.f, 35.f)];
+            subtitleCenterView.onLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:16.f];
+            subtitleCenterView.onLabel.text = NSLocalizedString(@"On", nil);
+            subtitleCenterView.offLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:16.f];
+            subtitleCenterView.offLabel.text = NSLocalizedString(@"Off", nil);
+            subtitleCenterView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+            subtitleCenterView.handler = ^(UIHansSwitchView * _Nonnull view, BOOL on) {
+                strongSelf->setting.checkSubtitleCenter = strongSelf->subtitleCenterView.on;
+                strongSelf->changed = YES;
+                return;
+            };
+            [cell addSubview:subtitleCenterView];
         }
-        subtitleCenterSwitch.on = setting.checkSubtitleCenter;
+        subtitleCenterView.on = setting.checkSubtitleCenter;
     }else if ([identifier isEqualToString:CELL_KEY_DEBUGMODE]){
         cell.textLabel.text = NSLocalizedString(@"Debug Mode", nil);
         cell.detailTextLabel.text = @"";
         if (nil == debugModeSwitch){
-            debugModeSwitch = [[UISwitch alloc] initWithFrame:CGRectMake((cell.frame.size.width - 130.f), 7.5f, 60.f, 40.f)];
+            debugModeSwitch = [[UIHansSwitchView alloc] init];
+            [debugModeSwitch setFrame:CGRectMake((cell.frame.size.width - 90.f), 5.f, 80.f, 35.f)];
+            debugModeSwitch.onLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:16.f];
+            debugModeSwitch.onLabel.text = NSLocalizedString(@"On", nil);
+            debugModeSwitch.offLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:16.f];
+            debugModeSwitch.offLabel.text = NSLocalizedString(@"Off", nil);
             debugModeSwitch.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
-            [debugModeSwitch addTarget:self action:@selector(debugModeChanged:) forControlEvents:UIControlEventValueChanged];
+            debugModeSwitch.handler = ^(UIHansSwitchView * _Nonnull view, BOOL on) {
+                strongSelf->setting.debugMode = strongSelf->debugModeSwitch.on;
+                strongSelf->changed = YES;
+            };
             [cell addSubview:debugModeSwitch];
         }
         debugModeSwitch.on = setting.debugMode;
@@ -307,9 +342,35 @@
 }
 
 -(NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section{
-    return [NSString stringWithFormat:NSLocalizedString(@"Video dimensions: %d x %d ONLY.\nCreate at:%@", nil),
-            [setting.videoWidth intValue],
-            [setting.videoHeight intValue],
-            [setting.createDate stringValue]];
+    switch (section) {
+        case 0:
+            return [NSString stringWithFormat:NSLocalizedString(@"Video dimensions: %d x %d ONLY.\nCreate at:%@", nil),
+                    [setting.videoWidth intValue],
+                    [setting.videoHeight intValue],
+                    [setting.createDate stringValue]];
+        case 1:{
+            NSString *a = NSLocalizedString(@"It is recommended that when the video resolution is higher than 1920x1080, after setting the text color and border color, the background image of the scan area will be filled during scanning to further improve the result quality.",nil);
+            NSString *b = NSLocalizedString(@"Discard scanned text results that are not centered.", nil);
+            return [NSString stringWithFormat:@"%@\n%@", a, b];}
+        case 2:
+            return NSLocalizedString(@"In order to improve this App, a small amount of storage space is used to store the scanning process information.",nil);
+        default:
+            break;
+    }
+    return @"";
+}
+
+-(NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section{
+    switch (section) {
+        case 0:
+            return NSLocalizedString(@"Basic:", nil);
+        case 1:
+            return NSLocalizedString(@"Advanced:",nil);
+        case 2:
+            return NSLocalizedString(@"Developer:",nil);
+        default:
+            break;
+    }
+    return @"";
 }
 @end
