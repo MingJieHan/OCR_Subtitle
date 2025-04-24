@@ -22,6 +22,7 @@
 #import "OCRTemplateTableViewController.h"
 
 #define MAXIMUM_THREAD 4    //How many thread for get Text from image.
+static ViewController * staticViewController;
 
 @interface ViewController ()<UIDocumentPickerDelegate,UIDocumentBrowserViewControllerDelegate,UIDocumentInteractionControllerDelegate>{
     NSDate *startDate;
@@ -46,15 +47,18 @@
     
     NSArray <OCRSetting *>*availableTemplatesForTheVideo;
     float templateViewWidth;
+    
+    AboutHansButton *aboutButton;
 }
 
 @end
 
 @implementation ViewController
-
+#pragma mark - Syetem
 -(void)viewDidLoad{
     [super viewDidLoad];
     NSLog(@"Home:%@", NSHomeDirectory());
+    staticViewController = self;
     self.view.backgroundColor = [UIColor whiteColor];
     progressVC = [[OCRProgressViewController alloc] init];
     
@@ -117,16 +121,27 @@
     verLabel.backgroundColor = [UIColor clearColor];
     verLabel.textColor = [UIHans gray];
     verLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin;
-    verLabel.font = [UIFont fontWithName:@"PingFangSC-Light" size:10.f];
+    if ( [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad){
+        verLabel.font = [UIFont fontWithName:@"PingFangSC-Light" size:12.f];    //12.f iPad
+    }else if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPhone){
+        verLabel.font = [UIFont fontWithName:@"PingFangSC-Light" size:10.f];    //10.f iPhone and iPod Touch
+    }else{
+        verLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:14.f];    //mac Catalyst
+    }
     verLabel.textAlignment = NSTextAlignmentCenter;
     verLabel.text = [NSString stringWithFormat:@"OCR Subtitle Version:%@ Build:%@", UIHans.appVersion, UIHans.appBuildVersion];
     [self.view addSubview:verLabel];
-
+    
+    aboutButton = AboutHansButton.shareButton;
+    [aboutButton setFrame:CGRectMake(self.view.frame.size.width-120.f, verLabel.frame.origin.y, 40.f, 40.f)];
+    aboutButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleTopMargin;
+    [self.view addSubview:aboutButton];
+    
     y = CGRectGetMaxY(historyView.frame) - 3.f;
     UIImageView *shadowView = [[UIImageView alloc] initWithFrame:CGRectMake(0.f, y, self.view.frame.size.width, 4.f)];
     shadowView.backgroundColor = [UIColor clearColor];
     shadowView.image = [[UIImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"shadow" ofType:@"png"]];
-    shadowView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin|UIViewAutoresizingFlexibleBottomMargin;
+    shadowView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleTopMargin;
     [self.view addSubview:shadowView];
 
 //    y = CGRectGetMaxY(debugButton.frame)+20.f;
@@ -141,37 +156,6 @@
 //        NSLog(@"%@", descriptString);
 //    }
 }
-
-OCRHistoryCell *openingCell;
--(void)openExistOCRHistory:(OCRHistoryCell * _Nonnull)historyCell{
-    NSString *fullPathFile = [historyCell.item reWriteSRTInfo];
-    UIView *thumbnail = [historyCell snapshotViewAfterScreenUpdates:NO];
-    CGRect rect = [historyView convertRect:historyCell.frame toView:self.view];
-    [thumbnail setFrame:rect];
-    [self.view addSubview:thumbnail];
-    [UIView animateWithDuration:0.6 animations:^{
-        [thumbnail setFrame:CGRectMake(0.f, 0.f, self.view.frame.size.width, self.view.frame.size.height)];
-        thumbnail.alpha = 0.f;
-    } completion:^(BOOL finished) {
-        [thumbnail removeFromSuperview];
-    }];
-    openingCell = historyCell;
-    if (fullPathFile){
-        UIDocumentInteractionController *b = [UIDocumentInteractionController interactionControllerWithURL:[NSURL fileURLWithPath:fullPathFile]];
-        if (nil == b){
-            NSLog(@"UIDocumentInteractionController init failed.");
-            return;
-        }
-        b.delegate = self;
-        [b presentPreviewAnimated:YES];
-    }
-}
-
--(void)moreActionWith:(OCRHistory *)anHistory{
-    [historyView removeObject:anHistory];
-    return;
-}
-
 -(void)viewDidAppear:(BOOL)animated{
     [super viewDidAppear:animated];
     
@@ -190,12 +174,56 @@ OCRHistoryCell *openingCell;
     
 //    UIHansAboutViewController *v = [[UIHansAboutViewController alloc] init];
 //    v.handler = ^(NSURL * _Nonnull url) {
-//        
+//
 //    };
-//    [UIHans.currentVC presentViewController:v animated:YES completion:nil];    
+//    [UIHans.currentVC presentViewController:v animated:YES completion:nil];
+}
+
+#pragma mark - My Functions
+OCRHistoryCell *openingCell;
+-(void)openExistOCRHistory:(OCRHistoryCell * _Nonnull)historyCell{
+    NSString *fullPathFile = [historyCell.item reWriteSRTInfo];
+    UIView *thumbnail = [historyCell snapshotViewAfterScreenUpdates:NO];
+    CGRect rect = [historyView convertRect:historyCell.frame toView:self.view];
+    [thumbnail setFrame:rect];
+    [self.view addSubview:thumbnail];
+    [UIView animateWithDuration:0.6 animations:^{
+        [thumbnail setFrame:CGRectMake(0.f, 0.f, self.view.frame.size.width, self.view.frame.size.height)];
+        thumbnail.alpha = 0.f;
+    } completion:^(BOOL finished) {
+        [thumbnail removeFromSuperview];
+    }];
+    openingCell = historyCell;
+    if (fullPathFile){
+        if ([NSProcessInfo processInfo].iOSAppOnMac ||
+            [NSProcessInfo processInfo].isMacCatalystApp){
+            //在M1笔记本上，presentPreviewAnimated 打开方式失败
+            //用下面的方法成功
+            [UIApplication.sharedApplication openURL:[NSURL fileURLWithPath:fullPathFile] options:[NSDictionary dictionary] completionHandler:nil];
+            return;
+        }
+        
+        UIDocumentInteractionController *b = [UIDocumentInteractionController interactionControllerWithURL:[NSURL fileURLWithPath:fullPathFile]];
+        if (nil == b){
+            NSLog(@"UIDocumentInteractionController init failed.");
+            return;
+        }
+        b.delegate = self;
+        BOOL opened = [b presentPreviewAnimated:YES];
+        if (NO == opened){
+            NSLog(@"presentPreviewAnimated open failed.");
+            return;
+        }
+    }
+}
+
+-(void)moreActionWith:(OCRHistory *)anHistory{
+    [historyView removeObject:anHistory];
+    return;
 }
 
 UIDocumentBrowserViewController *documentBrowserVC;
+UIDocumentPickerViewController *pickerViewController;
 -(void)cancelFileSelectAction:(id)sender{
     [documentBrowserVC dismissViewControllerAnimated:YES completion:nil];
     return;
@@ -209,6 +237,15 @@ UIDocumentBrowserViewController *documentBrowserVC;
         [utTypes addObject:type];
     }
     types = utTypes;
+    
+    if ([NSProcessInfo processInfo].iOSAppOnMac || [[NSProcessInfo processInfo] isMacCatalystApp]){
+        pickerViewController = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:types];
+        pickerViewController.delegate = self;
+        [UIHans.currentVC presentViewController:pickerViewController animated:YES completion:nil];
+        return;
+    }
+
+    //for iOS
     documentBrowserVC = [[UIDocumentBrowserViewController alloc] initForOpeningContentTypes:types];
     if (nil == setting){
         documentBrowserVC.title = NSLocalizedString(@"Select a video for scan subtitles.", nil);
@@ -225,7 +262,9 @@ UIDocumentBrowserViewController *documentBrowserVC;
     documentBrowserVC.additionalTrailingNavigationBarButtonItems = @[cancelButtonItem];
     UINavigationController *n = [[UINavigationController alloc] initWithRootViewController:documentBrowserVC];
     documentBrowserVC.navigationItem.rightBarButtonItem = cancelButtonItem;
-    [UIHans.currentVC presentViewController:n animated:YES completion:nil];
+    [UIHans.currentVC presentViewController:n animated:YES completion:^{
+        
+    }];
     return;
 }
 
@@ -434,6 +473,7 @@ UIDocumentBrowserViewController *documentBrowserVC;
     return;
 }
 
+//打开模版的设置界面
 -(void)showTemplateDetailWithSetting:(OCRSetting *)setting{
     OCRTemplateTableViewController *ttVc = [[OCRTemplateTableViewController alloc] initWithSetting:setting];
     ttVc.changedHandler = ^(OCRTemplateTableViewController * _Nonnull vc) {
@@ -441,7 +481,11 @@ UIDocumentBrowserViewController *documentBrowserVC;
         return;
     };
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:ttVc];
-    nav.modalPresentationStyle = UIModalPresentationFullScreen;
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        nav.modalPresentationStyle = UIModalPresentationFormSheet;
+    }else{
+        nav.modalPresentationStyle = UIModalPresentationFullScreen;
+    }
     [self presentViewController:nav animated:YES completion:nil];
 }
 
@@ -716,8 +760,7 @@ UIView *cellView;
 }
 
 #pragma mark - UIDocumentPickerDelegate
-- (void)documentPicker:(UIDocumentPickerViewController *)controller
-        didPickDocumentsAtURLs:(NSArray <NSURL *>*)urls API_AVAILABLE(ios(11.0)){
+- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray <NSURL *>*)urls API_AVAILABLE(ios(11.0)) API_UNAVAILABLE(watchos){
     [controller dismissViewControllerAnimated:YES completion:^{
         [self pickupURLs:urls];
     }];
@@ -728,6 +771,8 @@ UIView *cellView;
     return;
 }
 
+
+#pragma mark - UIDocumentBrowserViewControllerDelegate
 - (void)documentBrowser:(UIDocumentBrowserViewController *)controller didPickDocumentsAtURLs:(NSArray <NSURL *> *)documentURLs API_AVAILABLE(ios(12.0)){
     [controller dismissViewControllerAnimated:YES completion:^{
         [self pickupURLs:documentURLs];
@@ -749,8 +794,20 @@ UIView *cellView;
     return openingCell;
 }
 
-#pragma mark - Debug Functions
 
+#pragma mark - For mac Catalyst
++(ViewController *)shared{
+    return staticViewController;
+}
+
+-(void)scanVideoFromMenuInCatalyst{
+    setting = nil;
+    [self  selectFileAction];
+    return;
+}
+
+
+#pragma mark - Debug Functions
 -(void)debugGetImagesFromVideo{
     //getImages 初始化后，同样选择视频文件，程序将只保存特定ms位置的图片，到Documents目录下
     debugGetImagesFromVideo = [[NSMutableArray alloc] init];

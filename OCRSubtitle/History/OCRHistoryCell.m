@@ -60,7 +60,7 @@
         [removeButton setBackgroundColor:[UIColor clearColor] forState:UIControlStateNormal];
         [removeButton setBackgroundColor:[UIColor grayColor] forState:UIControlStateHighlighted];
         [removeButton addTarget:self action:@selector(removeAction) forControlEvents:UIControlEventTouchUpInside];
-        removeButton.backgroundColor = [UIColor clearColor];
+        removeButton.backgroundColor = [UIColor colorWithRed:0.8 green:0.8 blue:0.8 alpha:0.5f];
         [itemView addSubview:removeButton];
     }
     return;

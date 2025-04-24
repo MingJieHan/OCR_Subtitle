@@ -1,0 +1,40 @@
+/* 
+  Localizable.strings
+  
+
+  Created by Hans on 2025/4/3.
+  
+*/
+
+//AboutView.
+"Rate" = "Rate OCR Subtitle";
+"Share" = "Share";
+"FAQ" = "FAQ";
+"Feedback" = "Feedback";
+"default text for share app." = "OCR Subtitle";
+"About title" = "About";
+"App Name" = "OCR Subtitle";
+"Update Build" = "Update:Build";
+
+//Feddback view.
+"Feedback title" = "Feedback";
+"feedback type" = "Type";
+"Option email or phone" = "Option contact email or phone";
+"Submit" = "Submit";
+"Bug" = "Bug";
+"Feature Suggestions" = "Feature";
+"Content Comments" = "Content";
+"Business Communication" = "Business";
+"Network Issues" = "Network";
+"Other" = "Other";
+
+
+"Help Online" = "Help Online";
+"About Me" = "About Me";
+
+
+//URL in settings.plist
+"Video0Title" = "Technical method for OCR Subtitle";
+"Video0Url" = "https://youtu.be/i-tLJ_qtE24";
+"Video1Title" = "OCR Subtitle operation demonstration video";
+"Video1Url" = "https://youtu.be/FmkZF42A2-g";

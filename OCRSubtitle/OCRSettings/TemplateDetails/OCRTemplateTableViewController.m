@@ -125,6 +125,16 @@
     UIBarButtonItem *cleanItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemTrash target:self action:@selector(cleanTextColor:)];
     textColorPicker.navigationItem.rightBarButtonItems = @[saveItem, cleanItem];
     textColorPicker.title = @"Text Color";
+    
+    if ([NSProcessInfo processInfo].iOSAppOnMac ||
+        [NSProcessInfo processInfo].isMacCatalystApp){
+        textColorPicker.edgesForExtendedLayout = UIRectEdgeNone;
+        // 强制以 formSheet 弹出样式
+        textColorPicker.modalPresentationStyle = UIModalPresentationFormSheet;
+        // 强制弹出视图的大小，否则无法返回
+        textColorPicker.preferredContentSize = CGSizeMake(500.f, 600.f);
+    }
+    
     [self.navigationController pushViewController:textColorPicker animated:YES];
     return;
 }
@@ -149,6 +159,17 @@
     UIBarButtonItem *cleanItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemTrash target:self action:@selector(cleanBorderColor:)];
     borderColorPicker.navigationItem.rightBarButtonItems = @[saveItem,cleanItem];
     borderColorPicker.title = @"Border Color";
+    
+    
+    
+    if ([NSProcessInfo processInfo].iOSAppOnMac ||
+        [NSProcessInfo processInfo].isMacCatalystApp){
+        borderColorPicker.edgesForExtendedLayout = UIRectEdgeNone;
+        // 强制以 formSheet 弹出样式
+        borderColorPicker.modalPresentationStyle = UIModalPresentationFormSheet;
+        // 强制弹出视图的大小，否则无法返回
+        borderColorPicker.preferredContentSize = CGSizeMake(500.f, 600.f);
+    }
     [self.navigationController pushViewController:borderColorPicker animated:YES];
     return;
 }

@@ -6,9 +6,10 @@
 //
 
 #import "ViewController.h"
+#import <HansServer/HansServer.h>
 #import <Vision/Vision.h>
 #import "TTT.h"
-@interface ViewController ()
+@interface ViewController ()<UIDocumentBrowserViewControllerDelegate>
 
 @end
 
@@ -27,7 +28,6 @@
     UIGraphicsEndImageContext();
     return img;
 }
-
 
 -(VNFeaturePrintObservation *)observeFromImage:(nullable CGImageRef)cgImage{
     NSDictionary *opt = [NSDictionary dictionary];
@@ -76,8 +76,59 @@
     return;
 }
 
+UIDocumentBrowserViewController *documentBrowserVC;
+-(void)cancelFileSelectAction:(id)sender{
+    [documentBrowserVC dismissViewControllerAnimated:YES completion:nil];
+    return;
+}
+-(void)openDocumente{
+    NSArray *types = @[@"mp4", @"mov"];
+    NSMutableArray *utTypes = [[NSMutableArray alloc] init];
+    for (NSString *tString in types){
+        UTType *type = [UTType typeWithTag:tString tagClass:UTTagClassFilenameExtension conformingToType:nil];
+        [utTypes addObject:type];
+    }
+    types = utTypes;
+    documentBrowserVC = [[UIDocumentBrowserViewController alloc] initForOpeningContentTypes:types];
+//    if (nil == setting){
+//        documentBrowserVC.title = NSLocalizedString(@"Select a video for scan subtitles.", nil);
+//    }else{
+//        documentBrowserVC.title = [NSString stringWithFormat:NSLocalizedString(@"Select video dimensions %dx%d, Template:%@.",nil),
+//                                   [setting.videoWidth intValue],
+//                                   [setting.videoHeight intValue],
+//                                   setting.name];
+//    }
+    documentBrowserVC.allowsPickingMultipleItems = NO;
+    documentBrowserVC.allowsDocumentCreation = NO;
+    documentBrowserVC.delegate = self;
+//    UIBarButtonItem *cancelButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self action:@selector(cancelFileSelectAction:)];
+//    documentBrowserVC.additionalTrailingNavigationBarButtonItems = @[cancelButtonItem];
+    UINavigationController *n = [[UINavigationController alloc] initWithRootViewController:documentBrowserVC];
+//    documentBrowserVC.navigationItem.rightBarButtonItem = cancelButtonItem;
+    [UIHans.currentVC presentViewController:n animated:YES completion:^{
+        
+    }];
+    return;
+}
+
+#pragma mark - UIDocumentBrowserViewControllerDelegate
+- (void)documentBrowser:(UIDocumentBrowserViewController *)controller didPickDocumentsAtURLs:(NSArray <NSURL *> *)documentURLs API_AVAILABLE(ios(12.0)){
+    [controller dismissViewControllerAnimated:YES completion:^{
+//        [self pickupURLs:documentURLs];
+    }];
+    return;
+}
+
+
+-(void)viewDidAppear:(BOOL)animated{
+    [super viewDidAppear:animated];
+    [self openDocumente];
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
+    return;
     
     NSMutableArray *arrayFrom = [[NSMutableArray alloc] init];
     for (int i=0;i<100;i++){

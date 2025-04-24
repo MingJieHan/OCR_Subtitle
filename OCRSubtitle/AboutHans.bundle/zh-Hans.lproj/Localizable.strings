@@ -1,0 +1,41 @@
+/* 
+  Localizable.strings
+  
+
+  Created by Hans on 2025/4/3.
+  
+*/
+//AboutView.
+"Rate" = "为\"字幕提取\"评分";
+"Share" = "分享给朋友";
+"FAQ" = "帮助";
+"Feedback" = "反馈";
+"default text for share app." = "字幕提取";
+"About title" = "关于";
+"App Name" = "字幕提取";
+"Update Build" = "更新序号：Build";
+
+//Feddback view.
+"Feedback title" = "您的反馈很重要";
+"feedback type" = "选择反馈类型";
+"Option email or phone" = "联系您的手机或邮箱";
+"Submit" = "提交";
+"Bug" = "程序错误";
+"Feature Suggestions" = "功能建议";
+"Content Comments" = "内容问题";
+"Business Communication" = "商业沟通";
+"Network Issues" = "网络问题";
+"Other" = "其他";
+
+
+
+"Help Online" = "在线帮助";
+"About Me" = "关于开发者";
+
+
+//URL in settings.plist
+"Video0Title" = "扫描视频字幕实现的技术方法";
+"Video0Url" = "https://www.bilibili.com/video/BV1Wq5Rz2E5b/";
+"Video1Title" = "扫描字幕的操作演示视频";
+"Video1Url" = "https://www.bilibili.com/video/BV1txLizKEGs/";
+

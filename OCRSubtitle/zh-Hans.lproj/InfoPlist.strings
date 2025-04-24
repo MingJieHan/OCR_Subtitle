@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  OCR Subtitle
+
+  Created by Hans on 2025/4/24.
+  
+*/
+
+CFBundleDisplayName = "字幕提取";
+CFBundleName = "字幕提取";

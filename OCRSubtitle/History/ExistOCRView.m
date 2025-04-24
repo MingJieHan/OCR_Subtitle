@@ -24,6 +24,7 @@
         self.backgroundColor = [UIHans colorFromHEXString:@"E5E5E5"];
         self.layer.masksToBounds = YES;
         self.layer.cornerRadius = 6.f;
+        self.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
         
         float y = 0.f;
         
@@ -34,7 +35,7 @@
         bView.layer.masksToBounds = YES;
         bView.layer.borderColor = [UIHans colorFromHEXString:@"E5E5E5"].CGColor;
         bView.layer.borderWidth = 2.f;
-        bView.contentMode = UIViewContentModeScaleAspectFit;
+        bView.contentMode = UIViewContentModeScaleAspectFill;
         bView.userInteractionEnabled = YES;
         [self addSubview:bView];
         

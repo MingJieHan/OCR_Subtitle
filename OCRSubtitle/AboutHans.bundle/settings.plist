@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Hrefs</key>
+	<array>
+		<dict>
+			<key>Url</key>
+			<string>Video1Url</string>
+			<key>Title</key>
+			<string>Video1Title</string>
+			<key>Image</key>
+			<string>abc</string>
+		</dict>
+		<dict>
+			<key>Image</key>
+			<string>abc</string>
+			<key>Title</key>
+			<string>Video0Title</string>
+			<key>Url</key>
+			<string>Video0Url</string>
+		</dict>
+	</array>
+	<key>CopyRights</key>
+	<string>©2010-2025 MingJie Han All Rights Reserved</string>
+	<key>AppleID</key>
+	<string>6737728257</string>
+	<key>OnlineHelp</key>
+	<string>https://www.hanmingjie.com/</string>
+</dict>
+</plist>

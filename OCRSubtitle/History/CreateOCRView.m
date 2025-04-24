@@ -33,6 +33,7 @@
         [self addSubview:addLabel];
         
         textLabel = [[UILabel alloc] initWithFrame:CGRectMake(0.f, frame.size.height * 0.75, frame.size.width, 40.f)];
+        textLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
         textLabel.backgroundColor = [UIColor clearColor];
         textLabel.textColor = addLabel.textColor;
         textLabel.textAlignment = NSTextAlignmentCenter;

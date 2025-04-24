@@ -267,24 +267,6 @@
         if ([v isKindOfClass:[SCRResultAnimatedLabel class]]){
             SCRResultAnimatedLabel *label = (SCRResultAnimatedLabel *)v;
             label.targetCenter = storageImageView.center;
-//            [label setNeedsLayout];
-//            [self.view addSubview:label];
-//            [self.view.layer addSublayer:label.layer];
-//            [label.layer removeAllAnimations];
-            //拖动接收器位置后，正在飞行的Label不能改变到新的位置，代码未完成。
-//            NSLog(@"%@", label.layer.animationKeys);
-//            NSLog(@"Label %@ x:%.2f, y:%.2f", label.text, label.center.x, label.center.y);
-            
-//            [UIView animateWithDuration:1.2
-//                                  delay:0.f
-//                                options:UIViewAnimationOptionCurveLinear|UIViewAnimationOptionBeginFromCurrentState
-//                             animations:^{
-//                label.transform = CGAffineTransformMakeScale(0.1, 0.1);
-//                [label setCenter:self->storageImageView.center];
-//            } completion:^(BOOL finished) {
-//                [self completedAnimatedAnLabel];
-//                [label removeFromSuperview];
-//            }];
         }
     }
     [recognizer setTranslation:CGPointMake(0.f, 0.f) inView:storageImageView.superview];

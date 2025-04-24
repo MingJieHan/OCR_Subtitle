@@ -79,18 +79,19 @@
         fontLabel.text = @"字幕样本";
 //        [self addSubview:fontLabel];
         
-        infoButton = [UIButton buttonWithType:UIButtonTypeInfoLight];
-        [infoButton setFrame:CGRectMake(0.f, 0.f, 30.f, 30.f)];
-        infoButton.transform = CGAffineTransformMakeScale(0.7, 0.7);
+        infoButton = [[UIButton alloc] initWithFrame:CGRectMake(2.f, 2.f, 30.f, 30.f)];
+//        infoButton.transform = CGAffineTransformMakeScale(0.7, 0.7);
+        UIImage *image = [[UIImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"info" ofType:@"png"]];
+        [infoButton setBackgroundImage:image forState:UIControlStateNormal];
         [infoButton addTarget:self action:@selector(infoButtonAction) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:infoButton];
         
-        removeButton = [[UIHansButton alloc] initWithFrame:CGRectMake(self.frame.size.width-35.f, -5.f, 40.f, 40.f)];
+        removeButton = [[UIHansButton alloc] initWithFrame:CGRectMake(self.frame.size.width-32.f, 2.f, 30.f, 30.f)];
         removeButton.enabled = YES;
         removeButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleBottomMargin;
         [removeButton addTarget:self action:@selector(removeButtonAction) forControlEvents:UIControlEventTouchUpInside];
-        [removeButton setImage:[UIImage imageWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"delete" ofType:@"png"]] forState:UIControlStateNormal];
-        [removeButton setImage:[UIImage imageWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"delete_disable" ofType:@"png"]] forState:UIControlStateDisabled];
+        [removeButton setImage:[UIImage imageWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"remove" ofType:@"png"]] forState:UIControlStateNormal];
+//        [removeButton setImage:[UIImage imageWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"delete_disable" ofType:@"png"]] forState:UIControlStateDisabled];
         [removeButton setBackgroundColor:[UIColor clearColor] forState:UIControlStateNormal];
         [removeButton setBackgroundColor:[UIColor grayColor] forState:UIControlStateHighlighted];
         [self addSubview:removeButton];

@@ -135,6 +135,10 @@
 }
 
 -(float)fingerPrintDistanceWith:(OCRSegment *)otherSegment{
+    if ( fabsl(self.t - otherSegment.t) > 1.f){
+        //字幕出现的时间差大于1秒，判定为不同。
+        return 1.f;
+    }
     float distance = 1.f;
     [fingerPrintObservation computeDistance:&distance toFeaturePrintObservation:otherSegment.    fingerPrintObservation error:nil];
     return distance;
